@@ -1,4 +1,4 @@
-#mongo shell的使用
+# mongo shell的使用
 
 database -> table 表 -> row 行
 
@@ -6,7 +6,7 @@ database -> collection 集合 -> document  文档
 
 **MongoDB Shell 是MongoDB**自带的JavaScript **Shell**，随**MongoDB**一同发布，它**是**MonoDB客户端工具，可以在**Shell**中使用命令与**MongoDB**实例交互，对数据库的管理操作（CURD、集群配置、状态查看等）都可以通过**MongoDB Shell**来完成。 
 
-###1、数据库管理
+### 1、数据库管理
 
 创建数据库的语法，如果数据库不存在，则创建数据库，否则切换到指定数据库。
 
@@ -24,7 +24,7 @@ show dbs
 db.COLLECTION_NAME.insert({"name":"enmonster"})
 ```
 
-###2、分配权限
+### 2、分配权限
 
 用root用户登录。我的root用户是'admin'，登录命令
 
