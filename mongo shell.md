@@ -63,9 +63,9 @@ root：只在admin数据库中可用。超级账号，超级权限
 use DATABASE_NAME;//切换到要查看的库。
 show users;
 ```
-###3、增删改查语法
+### 3、增删改查语法
 
-####3.1 新增
+#### 3.1 新增
 
 ```
 // 语法：
@@ -92,7 +92,7 @@ db.inventory.insertMany([
    { item: "mousepad", qty: 25, tags: ["gel", "blue"], size: { h: 19, w: 22.85, uom: "cm" } }
 ])
 ```
-####3.2修改
+#### 3.2修改
 ```
 // 语法
 db.collection.update(
@@ -127,7 +127,7 @@ db.inventory.updateOne(
    }
 )
 ```
-####3.3删除
+#### 3.3删除
 ```
 // 语法
 db.collection.remove(
@@ -139,8 +139,8 @@ db.collection.remove(
    }
 )
 ```
-####3.4查找
-#####3.4.1 检索对象
+#### 3.4查找
+##### 3.4.1 检索对象
 ```
 // 插入示例数据
 db.inventory.insertMany( [
@@ -211,7 +211,7 @@ db.inventory.insertMany([
    db.inventory.find( { "tags": { $size: 3 } } )
    ```
 
-#####3.4.3 检索对象数组
+##### 3.4.3 检索对象数组
 
 ```
 db.inventory.insertMany( [
@@ -225,7 +225,7 @@ db.inventory.insertMany( [
 
 ​	
 
-#####3.4.3 返回指定属性
+##### 3.4.3 返回指定属性
 
 插入示例数据
 
@@ -248,7 +248,7 @@ db.inventory.find( { status: "A" }, { item: 1, status: 1, "instock.qty": 1 } )//
 db.inventory.find( { status: "A" }, { item: 1, status: 1, instock: { $slice: -1 } } )//指定返回数组的最后一项。
 ```
 
-#####3.4.4 null和属性是否存在
+##### 3.4.4 null和属性是否存在
 
 ```
 db.inventory.insertMany([
@@ -263,7 +263,7 @@ db.inventory.find( { item : { $type: 10 } } )// 通过类型检查匹配null
 db.inventory.find( { item : { $exists: false } } )// 有咩有这个属性
 ```
 
-#####3.4.5 迭代器
+##### 3.4.5 迭代器
 
 ```
 var myCursor = db.users.find( { type: 2 } );
@@ -280,7 +280,7 @@ myCursor.forEach(printjson);
 
 数据迁移的时候比较有用。
 
-###4、聚合管道Aggregation Pipeline
+### 4、聚合管道Aggregation Pipeline
 
 管道：在Unix和Linux中一般用于将当前命令的输出结果作为下一个命令的参数。
 
@@ -336,7 +336,7 @@ db.collection.explain().count()
 
 
 
-###6、索引的使用
+### 6、索引的使用
 
 ```
 db.channel_daily_biz_bill.createIndex({'billDt':1, 'matchRes':1});
@@ -344,7 +344,7 @@ db.daily_match.getIndexes()
 db.daily_match.dropIndex()
 ```
 
-###7、mongo的数据类型
+### 7、mongo的数据类型
 
 Each BSON type has both integer and string identifiers as listed in the following table:
 
@@ -372,7 +372,7 @@ Each BSON type has both integer and string identifiers as listed in the followin
 | Min key                 | -1     | “minKey”              |                     |
 | Max key                 | 127    | “maxKey”              |                     |
 
-###8、运维监控
+### 8、运维监控
 
 
 ```
@@ -384,7 +384,7 @@ mongotop --host=127.0.0.1 --port=27017 -uadmin -padmin --authenticationDatabase=
 db.currentOp()// 查看正在执行的线程
 db.killOp(opId)// 中止慢查
 ```
-###9、js脚本
+### 9、js脚本
 ```
 db.daily_match.find({
     "billDt":{$lte:20180531,$gte:20180501},
@@ -415,7 +415,7 @@ db.daily_match.find({
 })
     
 ```
-###附录
+### 附录
 
 #### 1、query语句操作符
 
