@@ -146,7 +146,24 @@ this.threshold = tableSizeFor(initialCapacity) * this.loadFactor;
 
 从上面的代码可以看到key的hash值的计算方法。key的hash值高16位不变，低16位与高16位异或作为key的最终hash值。（h >>> 16，表示无符号右移16位，高位补0，任何数跟0异或都是其本身，因此key的hash值高16位不变。） 
 
-#  3 - 链表节点Node
+![](https://github.com/ligengwasd/blog/blob/master/HashMap%E6%BA%90%E7%A0%81/images/20160408155045341.jpg?raw=true)
+
+为什么要这么干呢？  这个与HashMap中table下标的计算有关。
+
+```java
+n = table.length;
+index = （n-1） & hash;
+```
+
+因为，table的长度都是2的幂，因此index仅与hash值的低n位有关（此n非table.leng，而是2的幂指数），hash值的高位都被与操作置为0了。  假设table.length=2^4=16。 
+
+![](https://github.com/ligengwasd/blog/blob/master/HashMap%E6%BA%90%E7%A0%81/images/20160408155102734.jpg?raw=true)
+
+由上图可以看到，只有hash值的低4位参与了运算。  
+
+所以这个方法的作用是让key的原始hash值的高位和低位都参与运算。
+
+#  4 - 链表节点Node
 
 ```java
 	static class Node<K,V> implements Map.Entry<K,V> {
