@@ -359,7 +359,7 @@ ConcurrentHashMap定义了三个原子操作，用于对指定位置的节点进
 再看一下多线程是如何完成的：
 在代码的69行有一个判断，如果遍历到的节点是forward节点，就向后继续遍历，再加上给节点上锁的机制，就完成了多线程的控制。多线程遍历节点，处理了一个节点，就把对应点的值set为forward，另一个线程看到forward，就向后遍历。这样交叉就完成了复制工作。而且还很好的解决了线程安全的问题。 这个方法的设计实在是让我膜拜。
 
-
+![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/20150826185956485.jpeg)
 
  
 
