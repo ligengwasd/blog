@@ -613,7 +613,15 @@ if 语句的换行通常使用 8 个空格的规则，因为常规缩进(4个空
 实例变量(Instance Variables)	 | 大小写规则和变量名相似，除了前面需要一个下划线	 | `int _employeeId` `String _name` `Customer _customer`
 常量(Constants)	 | 类常量和ANSI常量的声明，应该全部大写，单词间用下划线隔开。(尽量避免ANSI常量，容易引起错误)	 | `static final int MIN_WIDTH = 4` `static final int MAX_WIDTH = 999` `static final int GET_THE_CPU = 1`
 
+## 9.1布尔类型字段命名
+POJO 类中布尔类型的变量，都不要加 is ，否则部分框架解析会引起序列化错误。
+反例：定义为基本数据类型 boolean isSuccess;的属性，它的方法也是 isSuccess() ，RPC框架在反向解析的时候，“以为”对应的属性名称是 success ，导致属性获取不到，进而抛出异常。
+## 9.2 redis key命名规范
+
+待定
+
 # 10 - 编程惯例
+
 ## 10.1 提供对实例以及类变量的访问
 如果没有充分理由，不要设置实例或者类变量为 public。通常实例变量无需显式的set(设置)和gotten(获取)，通常这作为方法调用的side effect (边缘效应)而产生。
 
@@ -740,3 +748,60 @@ a.getCode == 0; //避免
 "业务订单".equals(a.getComment); // 避免
 ```
 ## 10.10 - entity和DTO规范
+entity必须继承Entity, Serializable接口，必须生成serialVersionUID，serialVersionUID必须全局唯一。
+```java
+public class ExchangeBaseEntity implements Entity, Serializable {
+    private static final long serialVersionUID = 4893573574258772685L;
+    ...
+}
+```
+DTO必须继承DTO, Serializable 接口，必须生成serialVersionUID，serialVersionUID必须全局唯一。
+```java
+public class ClosePayOrderRequestDTO implements DTO, Serializable {
+    private static final long serialVersionUID = -1999416332993052909L;
+    ...
+}
+```
+
+
+
+# 11 - 异常处理
+1. RuntimeException不能捕获
+说明：Java 类库中定义的可以通过预检查方式规避的RuntimeException异常不应该通过catch 的方式来处理，比如：NullPointerException，IndexOutOfBoundsException等等。 说明：无法通过预检查的异常除外，比如，在解析字符串形式的数字时，不得不通过catch NumberFormatException来实现。 
+正例：
+```java
+if (obj != null) {...} 
+```
+反例：
+```java
+try { obj.method() } catch (NullPointerException e) {…}
+```
+2.  异常不要用来做流程控制，条件控制。
+  说明：异常设计的初衷是解决程序运行中的各种意外情况，且异常的处理效率比条件判断方式要低很多。
+3.  捕获异常是为了处理它，不要捕获了却什么都不处理而抛弃之，如果不想处理它，请将该异常抛给它的调用者。最外层的业务使用者，必须处理异常，将其转化为用户可以理解的内容。
+4.  不要在finally块中使用return。  说明：finally块中的return返回后方法结束执行，不会再执行try块中的return语句。
+5.  避免出现重复的代码（Don’t Repeat Yourself），即DRY原则。 
+  说明：随意复制和粘贴代码，必然会导致代码的重复，在以后需要修改时，需要修改所有的副本，容易遗漏。必要时抽取共性方法，或者抽象公共类，甚至是组件化。 
+  正例：一个类中有多个public方法，都需要进行数行相同的参数校验操作，这个时候请抽取：
+
+
+# 12 - 日志规范
+1. 应用中不可直接使用日志系统（Log4j、Logback）中的API，而应依赖使用日志框架SLF4J中的API，使用门面模式的日志框架，有利于维护和各个类的日志处理方式统一。
+
+   ```
+   import org.slf4j.Logger;import org.slf4j.LoggerFactory;
+   private static final Logger logger = LoggerFactory.getLogger(Abc.class);  
+   ```
+
+2. 谨慎地记录日志。生产环境禁止输出debug日志；有选择地输出info日志；如果使用warn来记录刚上线时的业务行为信息，一定要注意日志输出量的问题，避免把服务器磁盘撑爆，并记得及时删除这些观察日志。  
+
+   说明：大量地输出无效日志，不利于系统性能提升，也不利于快速定位错误点。记录日志时请思考：这些日志真的有人看吗？看到这条日志你能做什么？能不能给问题排查带来好处？
+
+3. 可以使用warn日志级别来记录用户输入参数错误的情况，避免用户投诉时，无所适从。如非必要，请不要在此场景打出error级别，避免频繁报警。 
+
+   说明：注意日志输出的级别，error级别只记录系统逻辑出错、异常或者重要的错误信息。
+
+## 12.1 feign日志规范
+
+待定
+
