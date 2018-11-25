@@ -217,7 +217,7 @@ index = （n-1） & hash;
 **初始化或加倍哈希桶大小。如果是当前哈希桶是null,分配符合当前阈值的初始容量目标。  否则，因为我们扩容成以前的两倍。  在扩容时，要注意区分以前在哈希桶相同index的节点，现在是在以前的index里，还是index+oldlength 里**
 
 ```java
-final Node<K,V>[] resize() {
+    final Node<K,V>[] resize() {
         //oldTab 为当前表的哈希桶
         Node<K,V>[] oldTab = table;
         //当前哈希桶的容量 length
