@@ -135,8 +135,59 @@ this.threshold = tableSizeFor(initialCapacity) * this.loadFactor;
 这样才符合threshold的意思（当HashMap的size到达threshold这个阈值时会扩容）。 
 但是，请注意，在构造方法中，并没有对table这个成员变量进行初始化，table的初始化被推迟到了put方法中，在put方法中会对threshold重新计算，put方法的具体实现请看这篇博文。
 
-#  3 - put()方法
+# 3 - HashMap.hash()方法
 
- 
+```java
+	static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
+```
 
- 
+从上面的代码可以看到key的hash值的计算方法。key的hash值高16位不变，低16位与高16位异或作为key的最终hash值。（h >>> 16，表示无符号右移16位，高位补0，任何数跟0异或都是其本身，因此key的hash值高16位不变。） 
+
+#  3 - 链表节点Node
+
+```java
+	static class Node<K,V> implements Map.Entry<K,V> {
+        final int hash;//哈希值
+        final K key;//key
+        V value;//value
+        Node<K,V> next;//链表后置节点
+
+        Node(int hash, K key, V value, Node<K,V> next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
+
+        public final K getKey()        { return key; }
+        public final V getValue()      { return value; }
+        public final String toString() { return key + "=" + value; }
+
+        //每一个节点的hash值，是将key的hashCode 和 value的hashCode 亦或得到的。
+        public final int hashCode() {
+            return Objects.hashCode(key) ^ Objects.hashCode(value);
+        }
+        //设置新的value 同时返回旧value
+        public final V setValue(V newValue) {
+            V oldValue = value;
+            value = newValue;
+            return oldValue;
+        }
+
+        public final boolean equals(Object o) {
+            if (o == this)
+                return true;
+            if (o instanceof Map.Entry) {
+                Map.Entry<?,?> e = (Map.Entry<?,?>)o;
+                if (Objects.equals(key, e.getKey()) &&
+                    Objects.equals(value, e.getValue()))
+                    return true;
+            }
+            return false;
+        }
+    }
+```
+
