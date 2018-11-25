@@ -323,3 +323,81 @@ index = （n-1） & hash;
     }
 ```
 
+# 6 - put()函数
+
+往哈希表里插入一个节点的`putVal`函数,如果参数`onlyIfAbsent`是true，那么不会覆盖相同key的值value。如果`evict`是false。那么表示是在初始化时调用的
+
+```java
+    final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        //tab存放 当前的哈希桶， p用作临时链表节点  
+        Node<K,V>[] tab; Node<K,V> p; int n, i;
+        //如果当前哈希表是空的，代表是初始化
+        if ((tab = table) == null || (n = tab.length) == 0)
+            //那么直接去扩容哈希表，并且将扩容后的哈希桶长度赋值给n
+            n = (tab = resize()).length;
+        //如果当前index的节点是空的，表示没有发生哈希碰撞。 直接构建一个新节点Node，挂载在index处即可。
+        //这里再啰嗦一下，index 是利用 哈希值 & 哈希桶的长度-1，替代模运算
+        if ((p = tab[i = (n - 1) & hash]) == null)
+            tab[i] = newNode(hash, key, value, null);
+        else {//否则 发生了哈希冲突。
+            //e
+            Node<K,V> e; K k;
+            //如果哈希值相等，key也相等，则是覆盖value操作
+            if (p.hash == hash &&
+                ((k = p.key) == key || (key != null && key.equals(k))))
+                e = p;//将当前节点引用赋值给e
+            else if (p instanceof TreeNode)//红黑树暂且不谈
+                e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+            else {//不是覆盖操作，则插入一个普通链表节点
+                //遍历链表
+                for (int binCount = 0; ; ++binCount) {
+                    if ((e = p.next) == null) {//遍历到尾部，追加新节点到尾部
+                        p.next = newNode(hash, key, value, null);
+                        //如果追加节点后，链表数量》=8，则转化为红黑树
+                        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                            treeifyBin(tab, hash);
+                        break;
+                    }
+                    //如果找到了要覆盖的节点
+                    if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k))))
+                        break;
+                    p = e;
+                }
+            }
+            //如果e不是null，说明有需要覆盖的节点，
+            if (e != null) { // existing mapping for key
+                //则覆盖节点值，并返回原oldValue
+                V oldValue = e.value;
+                if (!onlyIfAbsent || oldValue == null)
+                    e.value = value;
+                //这是一个空实现的函数，用作LinkedHashMap重写使用。
+                afterNodeAccess(e);
+                return oldValue;
+            }
+        }
+        //如果执行到了这里，说明插入了一个新的节点，所以会修改modCount，以及返回null。
+
+        //修改modCount
+        ++modCount;
+        //更新size，并判断是否需要扩容。
+        if (++size > threshold)
+            resize();
+        //这是一个空实现的函数，用作LinkedHashMap重写使用。
+        afterNodeInsertion(evict);
+        return null;
+    }
+```
+
+小结： 
+
+* 运算尽量都用位运算代替，更高效。 
+* 对于扩容导致需要新建数组存放更多元素时，除了要将老数组中的元素迁移过来，也记得将老数组中的引用置null，以便GC 
+* 取下标 是用 哈希值 与运算 （桶的长度-1） i = (n - 1) & hash。 由于桶的长度是2的n次方，这么做其实是等于 一个模运算。但是效率更高 
+* 扩容时，如果发生过哈希碰撞，节点数小于8个。则要根据链表上每个节点的哈希值，依次放入新哈希桶对应下标位置。 
+* 因为扩容是容量翻倍，所以原链表上的每个节点，现在可能存放在原来的下标，即low位， 或者扩容后的下标，即high位。 high位= low位+原哈希桶容量 
+* 利用哈希值 与运算 旧的容量 ，if ((e.hash & oldCap) == 0),可以得到哈希值去模后，是大于等于oldCap还是小于oldCap，等于0代表小于oldCap，应该存放在低位，否则存放在高位。这里又是一个利用位运算 代替常规运算的高效点 
+* 如果追加节点后，链表数量》=8，则转化为红黑树 
+* 插入节点操作时，有一些空实现的函数，用作LinkedHashMap重写使用。
+---------------------
