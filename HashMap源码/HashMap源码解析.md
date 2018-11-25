@@ -1,7 +1,3 @@
----
-typora-root-url: ./images
----
-
 # 1 - HashMap的定义
 
 话不多说，首先从HashMap的一些基础开始。我们先看一下HashMap的定义：
@@ -117,7 +113,10 @@ n |= n >>> 4;
 注意，容量最大也就是32bit的正数，因此最后n |= n >>> 16; ，最多也就32个1，但是这时已经大于了MAXIMUM_CAPACITY ，所以取值到MAXIMUM_CAPACITY 。 
 **举一个例子说明下吧。** 
 
-![20160408183651111](/20160408183651111.jpg)
+![](https://raw.githubusercontent.com/ligengwasd/blog/master/HashMap%E6%BA%90%E7%A0%81/images/20160408183651111.jpg)
+
+
+
 
 这个算法着实牛逼啊！
 
