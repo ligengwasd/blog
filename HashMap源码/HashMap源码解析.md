@@ -51,6 +51,7 @@ public HashMap(int initialCapacity, float loadFactor) {
         throw new IllegalArgumentException("Illegal initial capacity: " +
                                            initialCapacity);
     if (initialCapacity > MAXIMUM_CAPACITY)
+        // 初始化容量不能超过最大值
         initialCapacity = MAXIMUM_CAPACITY;
     if (loadFactor <= 0 || Float.isNaN(loadFactor))
         throw new IllegalArgumentException("Illegal load factor: " +
@@ -60,11 +61,27 @@ public HashMap(int initialCapacity, float loadFactor) {
 }
 ```
 
- 
+ tableSizeFor方法
 
- 
+```java
+	/**
+     * Returns a power of two size for the given target capacity.
+     * 返回比cap大的最小的2的幂次方
+     */
+    static final int tableSizeFor(int cap) {
+        int n = cap - 1;
+        n |= n >>> 1;
+        n |= n >>> 2;
+        n |= n >>> 4;
+        n |= n >>> 8;
+        n |= n >>> 16;
+        return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+    }
+```
 
- 
+
+
+#  3 - put()方法
 
  
 
