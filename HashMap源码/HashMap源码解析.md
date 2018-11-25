@@ -242,7 +242,7 @@ index = （n-1） & hash;
         }//如果当前表是空的，但是有阈值。代表是初始化时指定了容量、阈值的情况
         else if (oldThr > 0) // initial capacity was placed in threshold
             newCap = oldThr;//那么新表的容量就等于旧的阈值
-        else {}//如果当前表是空的，而且也没有阈值。代表是初始化时没有任何容量/阈值参数的情况               // zero initial threshold signifies using defaults
+        else {//如果当前表是空的，而且也没有阈值。代表是初始化时没有任何容量/阈值参数的情况               // zero initial threshold signifies using defaults
             newCap = DEFAULT_INITIAL_CAPACITY;//此时新表的容量为默认的容量 16
             newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);//新的阈值为默认容量16 * 默认加载因子0.75f = 12
         }
