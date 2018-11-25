@@ -70,52 +70,56 @@ Node是最核心的内部类，它包装了key-value键值对，所有插入Conc
         volatile V val;//带有同步锁的value
         volatile Node<K,V> next;//带有同步锁的next指针
 
-        Node(int hash, K key, V val, Node<K,V> next) {
-            this.hash = hash;
-            this.key = key;
-            this.val = val;
-            this.next = next;
-        }
-     
-        public final K getKey()       { return key; }
-        public final V getValue()     { return val; }
-        public final int hashCode()   { return key.hashCode() ^ val.hashCode(); }
-        public final String toString(){ return key + "=" + val; }
-        //不允许直接改变value的值
-        public final V setValue(V value) {
-            throw new UnsupportedOperationException();
-        }
-     
-        public final boolean equals(Object o) {
-            Object k, v, u; Map.Entry<?,?> e;
-            return ((o instanceof Map.Entry) &&
-                    (k = (e = (Map.Entry<?,?>)o).getKey()) != null &&
-                    (v = e.getValue()) != null &&
-                    (k == key || k.equals(key)) &&
-                    (v == (u = val) || v.equals(u)));
-        }
-     
-        /**
-         * Virtualized support for map.get(); overridden in subclasses.
-         */
-        Node<K,V> find(int h, Object k) {
-            Node<K,V> e = this;
-            if (k != null) {
-                do {
-                    K ek;
-                    if (e.hash == h &&
-                        ((ek = e.key) == k || (ek != null && k.equals(ek))))
-                        return e;
-                } while ((e = e.next) != null);
-            }
-            return null;
-        }
+```java
+    Node(int hash, K key, V val, Node<K,V> next) {
+        this.hash = hash;
+        this.key = key;
+        this.val = val;
+        this.next = next;
     }
-    
+ 
+    public final K getKey()       { return key; }
+    public final V getValue()     { return val; }
+    public final int hashCode()   { return key.hashCode() ^ val.hashCode(); }
+    public final String toString(){ return key + "=" + val; }
+    //不允许直接改变value的值
+    public final V setValue(V value) {
+        throw new UnsupportedOperationException();
+    }
+ 
+    public final boolean equals(Object o) {
+        Object k, v, u; Map.Entry<?,?> e;
+        return ((o instanceof Map.Entry) &&
+                (k = (e = (Map.Entry<?,?>)o).getKey()) != null &&
+                (v = e.getValue()) != null &&
+                (k == key || k.equals(key)) &&
+                (v == (u = val) || v.equals(u)));
+    }
+ 
+    /**
+     * Virtualized support for map.get(); overridden in subclasses.
+     */
+    Node<K,V> find(int h, Object k) {
+        Node<K,V> e = this;
+        if (k != null) {
+            do {
+                K ek;
+                if (e.hash == h &&
+                    ((ek = e.key) == k || (ek != null && k.equals(ek))))
+                    return e;
+            } while ((e = e.next) != null);
+        }
+        return null;
+    }
+}
+
+/**
     这个Node内部类与HashMap中定义的Node类很相似，但是有一些差别
     它对value和next属性设置了volatile同步锁
     它不允许调用setValue方法直接改变Node的value域
     它增加了find方法辅助map.get()方法
+*/
+```
 
 ## 2.2 TreeNode
 
@@ -279,7 +283,7 @@ static {
 
 ConcurrentHashMap定义了三个原子操作，用于对指定位置的节点进行操作。正是这些原子操作保证了ConcurrentHashMap的线程安全。
 
-```
+```java
  @SuppressWarnings("unchecked")
     //获得在i位置上的Node节点
     static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
@@ -304,7 +308,7 @@ ConcurrentHashMap定义了三个原子操作，用于对指定位置的节点进
 
 初始化方法主要应用了关键属性sizeCtl 如果这个值〈0，表示其他线程正在进行初始化，就放弃这个操作。在这也可以看出ConcurrentHashMap的初始化只能由一个线程完成。如果获得了初始化权限，就用CAS方法将sizeCtl置为-1，防止其他线程进入。初始化数组后，将sizeCtl的值改为0.75*n
 
-```
+```java
 /**
      * Initializes table, using the size recorded in sizeCtl.
      */
@@ -359,7 +363,7 @@ ConcurrentHashMap定义了三个原子操作，用于对指定位置的节点进
 
  
 
-```
+```java
  /**
      * 一个过渡的table表  只有在扩容的时候才会使用
      */
@@ -540,85 +544,87 @@ public V put(K key, V value) {
         return putVal(key, value, false);
     }
 
-    /** Implementation for put and putIfAbsent */
-    final V putVal(K key, V value, boolean onlyIfAbsent) {
-    		//不允许 key或value为null
-        if (key == null || value == null) throw new NullPointerException();
-        //计算hash值
-        int hash = spread(key.hashCode());
-        int binCount = 0;
-        //死循环 何时插入成功 何时跳出
-        for (Node<K,V>[] tab = table;;) {
-            Node<K,V> f; int n, i, fh;
-            //如果table为空的话，初始化table
-            if (tab == null || (n = tab.length) == 0)
-                tab = initTable();
-            //根据hash值计算出在table里面的位置 
-            else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
-            	//如果这个位置没有值 ，直接放进去，不需要加锁
-                if (casTabAt(tab, i, null,
-                             new Node<K,V>(hash, key, value, null)))
-                    break;                   // no lock when adding to empty bin
-            }
-            //当遇到表连接点时，需要进行整合表的操作
-            else if ((fh = f.hash) == MOVED)
-                tab = helpTransfer(tab, f);
-            else {
-                V oldVal = null;
-                //结点上锁  这里的结点可以理解为hash值相同组成的链表的头结点
-                synchronized (f) {
-                    if (tabAt(tab, i) == f) {
-                        //fh〉0 说明这个节点是一个链表的节点 不是树的节点
-                        if (fh >= 0) {
-                            binCount = 1;
-                            //在这里遍历链表所有的结点
-                            for (Node<K,V> e = f;; ++binCount) {
-                                K ek;
-                                //如果hash值和key值相同  则修改对应结点的value值
-                                if (e.hash == hash &&
-                                    ((ek = e.key) == key ||
-                                     (ek != null && key.equals(ek)))) {
-                                    oldVal = e.val;
-                                    if (!onlyIfAbsent)
-                                        e.val = value;
-                                    break;
-                                }
-                                Node<K,V> pred = e;
-                                //如果遍历到了最后一个结点，那么就证明新的节点需要插入 就把它插入在链表尾部
-                                if ((e = e.next) == null) {
-                                    pred.next = new Node<K,V>(hash, key,
-                                                              value, null);
-                                    break;
-                                }
-                            }
-                        }
-                        //如果这个节点是树节点，就按照树的方式插入值
-                        else if (f instanceof TreeBin) {
-                            Node<K,V> p;
-                            binCount = 2;
-                            if ((p = ((TreeBin<K,V>)f).putTreeVal(hash, key,
-                                                           value)) != null) {
-                                oldVal = p.val;
+```java
+/** Implementation for put and putIfAbsent */
+final V putVal(K key, V value, boolean onlyIfAbsent) {
+		//不允许 key或value为null
+    if (key == null || value == null) throw new NullPointerException();
+    //计算hash值
+    int hash = spread(key.hashCode());
+    int binCount = 0;
+    //死循环 何时插入成功 何时跳出
+    for (Node<K,V>[] tab = table;;) {
+        Node<K,V> f; int n, i, fh;
+        //如果table为空的话，初始化table
+        if (tab == null || (n = tab.length) == 0)
+            tab = initTable();
+        //根据hash值计算出在table里面的位置 
+        else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+        	//如果这个位置没有值 ，直接放进去，不需要加锁
+            if (casTabAt(tab, i, null,
+                         new Node<K,V>(hash, key, value, null)))
+                break;                   // no lock when adding to empty bin
+        }
+        //当遇到表连接点时，需要进行整合表的操作
+        else if ((fh = f.hash) == MOVED)
+            tab = helpTransfer(tab, f);
+        else {
+            V oldVal = null;
+            //结点上锁  这里的结点可以理解为hash值相同组成的链表的头结点
+            synchronized (f) {
+                if (tabAt(tab, i) == f) {
+                    //fh〉0 说明这个节点是一个链表的节点 不是树的节点
+                    if (fh >= 0) {
+                        binCount = 1;
+                        //在这里遍历链表所有的结点
+                        for (Node<K,V> e = f;; ++binCount) {
+                            K ek;
+                            //如果hash值和key值相同  则修改对应结点的value值
+                            if (e.hash == hash &&
+                                ((ek = e.key) == key ||
+                                 (ek != null && key.equals(ek)))) {
+                                oldVal = e.val;
                                 if (!onlyIfAbsent)
-                                    p.val = value;
+                                    e.val = value;
+                                break;
+                            }
+                            Node<K,V> pred = e;
+                            //如果遍历到了最后一个结点，那么就证明新的节点需要插入 就把它插入在链表尾部
+                            if ((e = e.next) == null) {
+                                pred.next = new Node<K,V>(hash, key,
+                                                          value, null);
+                                break;
                             }
                         }
                     }
-                }
-                if (binCount != 0) {
-                	//如果链表长度已经达到临界值8 就需要把链表转换为树结构
-                    if (binCount >= TREEIFY_THRESHOLD)
-                        treeifyBin(tab, i);
-                    if (oldVal != null)
-                        return oldVal;
-                    break;
+                    //如果这个节点是树节点，就按照树的方式插入值
+                    else if (f instanceof TreeBin) {
+                        Node<K,V> p;
+                        binCount = 2;
+                        if ((p = ((TreeBin<K,V>)f).putTreeVal(hash, key,
+                                                       value)) != null) {
+                            oldVal = p.val;
+                            if (!onlyIfAbsent)
+                                p.val = value;
+                        }
+                    }
                 }
             }
+            if (binCount != 0) {
+            	//如果链表长度已经达到临界值8 就需要把链表转换为树结构
+                if (binCount >= TREEIFY_THRESHOLD)
+                    treeifyBin(tab, i);
+                if (oldVal != null)
+                    return oldVal;
+                break;
+            }
         }
-        //将当前ConcurrentHashMap的元素数量+1
-        addCount(1L, binCount);
-        return null;
     }
+    //将当前ConcurrentHashMap的元素数量+1
+    addCount(1L, binCount);
+    return null;
+}
+```
 
 
 
@@ -626,7 +632,7 @@ public V put(K key, V value) {
 
 这是一个协助扩容的方法。这个方法被调用的时候，当前ConcurrentHashMap一定已经有了nextTable对象，首先拿到这个nextTable对象，调用transfer方法。回看上面的transfer方法可以看到，当本线程进入扩容方法的时候会直接进入复制阶段。
 
-```
+```java
  /**
      * Helps transfer if a resize is in progress.
      */
@@ -655,7 +661,7 @@ public V put(K key, V value) {
 
 这个方法用于将过长的链表转换为TreeBin对象。但是他并不是直接转换，而是进行一次容量判断，如果容量没有达到转换的要求，直接进行扩容操作并返回；如果满足条件才链表的结构抓换为TreeBin ，这与HashMap不同的是，它并没有把TreeNode直接放入红黑树，而是利用了TreeBin这个小容器来封装所有的TreeNode.
 
-```
+```java
 private final void treeifyBin(Node<K,V>[] tab, int index) {
         Node<K,V> b; int n, sc;
         if (tab != null) {
@@ -689,7 +695,7 @@ private final void treeifyBin(Node<K,V>[] tab, int index) {
 
 get方法比较简单，给定一个key来确定value的时候，必须满足两个条件  key相同  hash值相同，对于节点可能在链表或树上的情况，需要分别去查找.
 
-```
+```java
 public V get(Object key) {
         Node<K,V>[] tab; Node<K,V> e, p; int n, eh; K ek;
         //计算hash值
@@ -724,7 +730,7 @@ public V get(Object key) {
 
 为了统计元素个数，ConcurrentHashMap定义了一些变量和一个内部类
 
-```
+```java
 /**
      * A padded cell for distributing counts.  Adapted from LongAdder
      * and Striped64.  See their internal docs for explanation.
@@ -739,27 +745,29 @@ public V get(Object key) {
 ​    
   /******************************************/  
     
-    /**
-     * 实际上保存的是hashmap中的元素个数  利用CAS锁进行更新
-     但它并不用返回当前hashmap的元素个数 
-     
-     */
-    private transient volatile long baseCount;
-    /**
-     * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
-     */
-    private transient volatile int cellsBusy;
-     
-    /**
-     * Table of counter cells. When non-null, size is a power of 2.
-     */
-    private transient volatile CounterCell[] counterCells;
+```java
+/**
+ * 实际上保存的是hashmap中的元素个数  利用CAS锁进行更新
+ 但它并不用返回当前hashmap的元素个数 
+ 
+ */
+private transient volatile long baseCount;
+/**
+ * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
+ */
+private transient volatile int cellsBusy;
+ 
+/**
+ * Table of counter cells. When non-null, size is a power of 2.
+ */
+private transient volatile CounterCell[] counterCells;
+```
 
 ## 8.2 mappingCount与Size方法
 
 mappingCount与size方法的类似  从Java工程师给出的注释来看，应该使用mappingCount代替size方法 两个方法都没有直接返回basecount 而是统计一次这个值，而这个值其实也是一个大概的数值，因此可能在统计的时候有其他线程正在执行插入或删除操作。
 
-```
+```java
 public int size() {
         long n = sumCount();
         return ((n < 0L) ? 0 :
@@ -784,23 +792,25 @@ public int size() {
 ```
 
 ​    
-     final long sumCount() {
-        CounterCell[] as = counterCells; CounterCell a;
-        long sum = baseCount;
-        if (as != null) {
-            for (int i = 0; i < as.length; ++i) {
-                if ((a = as[i]) != null)
-                    sum += a.value;//所有counter的值求和
-            }
+```java
+ final long sumCount() {
+    CounterCell[] as = counterCells; CounterCell a;
+    long sum = baseCount;
+    if (as != null) {
+        for (int i = 0; i < as.length; ++i) {
+            if ((a = as[i]) != null)
+                sum += a.value;//所有counter的值求和
         }
-        return sum;
     }
+    return sum;
+}
+```
 
 ## 8.3 addCount方法
 
 在put方法结尾处调用了addCount方法，把当前ConcurrentHashMap的元素个数+1这个方法一共做了两件事,更新baseCount的值，检测是否进行扩容。
 
-```
+```java
 private final void addCount(long x, int check) {
         CounterCell[] as; long b, s;
         //利用CAS方法更新baseCount的值 
