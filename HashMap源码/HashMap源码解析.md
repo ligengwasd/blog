@@ -1,4 +1,4 @@
-# 1、HashMap的定义
+# 1 - HashMap的定义
 
 话不多说，首先从HashMap的一些基础开始。我们先看一下HashMap的定义：
 
@@ -8,7 +8,7 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>, Cloneabl
 
 我们可以看出，HashMap继承了AbstractMap<K,V>抽象类，实现了Map<K,V>的方法。
 
-#  2、HashMap的属性
+#  2 - HashMap的属性
 
 ```java
 //默认容量
@@ -35,9 +35,30 @@ final float loadFactor;
 
 这里我们需要加载因子(load_factor)，加载因子默认为0.75，当HashMap中存储的元素的数量大于(容量×加载因子)，也就是默认大于16*0.75=12时，HashMap会进行扩容的操作。
 
+# 2 - 初始化
 
+一般来说，我们初始化的时候会这样写： 
 
+```java
+Map<K,V> map = new HashMap<K,V>();
+```
 
+这个过程发生了什么呢？我们看看源码。
+
+```java
+public HashMap(int initialCapacity, float loadFactor) {
+    if (initialCapacity < 0)
+        throw new IllegalArgumentException("Illegal initial capacity: " +
+                                           initialCapacity);
+    if (initialCapacity > MAXIMUM_CAPACITY)
+        initialCapacity = MAXIMUM_CAPACITY;
+    if (loadFactor <= 0 || Float.isNaN(loadFactor))
+        throw new IllegalArgumentException("Illegal load factor: " +
+                                           loadFactor);
+    this.loadFactor = loadFactor;
+    this.threshold = tableSizeFor(initialCapacity);
+}
+```
 
  
 
