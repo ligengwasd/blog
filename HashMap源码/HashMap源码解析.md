@@ -166,7 +166,7 @@ index = （n-1） & hash;
 #  4 - 链表节点Node
 
 ```java
-	static class Node<K,V> implements Map.Entry<K,V> {
+    static class Node<K,V> implements Map.Entry<K,V> {
         final int hash;//哈希值
         final K key;//key
         V value;//value
@@ -207,4 +207,8 @@ index = （n-1） & hash;
         }
     }
 ```
+
+**这是一个单链表~。**
+
+**每一个节点的hash值，是将key的hashCode 和 value的hashCode 亦或得到的。**
 
