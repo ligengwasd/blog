@@ -127,7 +127,35 @@ cas设置transferIndex的源码如下：
     }
 ```
 
+### 2.1.4 ForwardingNode节点
 
+1. 标记作用，表示其他线程正在扩容，并且此节点已经扩容完毕
+2. 关联了nextTable,扩容期间可以通过find方法，访问已经迁移到了nextTable中的数据
+
+```java
+     static final class ForwardingNode<K,V> extends Node<K,V> {
+        final Node<K,V>[] nextTable;
+        ForwardingNode(Node<K,V>[] tab) {
+            //hash值为MOVED（-1）的节点就是ForwardingNode
+            super(MOVED, null, null, null);
+            this.nextTable = tab;
+        }
+        //通过此方法，访问被迁移到nextTable中的数据
+        Node<K,V> find(int h, Object k) {
+           ...
+        }
+    }
+```
+
+
+
+ 
+
+ 
+
+ 
+
+ 
 
  
 
