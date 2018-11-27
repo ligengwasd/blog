@@ -229,11 +229,55 @@ cas设置transferIndex的源码如下：
 
 # 2.3 扩容过程分析
 
+1. 线程执行put操作，发现容量已经达到扩容阈值，需要进行扩容操作，此时transferindex=tab.length=32
 
+   ![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/6283837-7f4245fc23fc4324.png)
 
-  
+2. 扩容线程A 以cas的方式修改transferindex=31-16=16 ,然后按照降序迁移table[31]--table[16]这个区间的hash桶
 
- 
+   ![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/6283837-a6f735b4644ab7dd.png)
+
+3. 迁移hash桶时，会将桶内的链表或者红黑树，按照一定算法，拆分成2份，将其插入nextTable[i]和nextTable[i+n](n是table数组的长度)。 迁移完毕的hash桶,会被设置成ForwardingNode节点，以此告知访问此桶的其他线程，此节点已经迁移完毕。
+
+   ![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/6283837-6978c0be378fd383.png)
+
+   相关代码如下：
+
+   ```java
+     private final void transfer(Node<K,V>[] tab, Node<K,V>[] nextTab) {
+                 ...//省略无关代码
+                 synchronized (f) {
+                         //将node链表，分成2个新的node链表
+                         for (Node<K,V> p = f; p != lastRun; p = p.next) {
+                             int ph = p.hash; K pk = p.key; V pv = p.val;
+                             if ((ph & n) == 0)
+                                 ln = new Node<K,V>(ph, pk, pv, ln);
+                             else
+                                 hn = new Node<K,V>(ph, pk, pv, hn);
+                         }
+                         //将新node链表赋给nextTab
+                         setTabAt(nextTab, i, ln);
+                         setTabAt(nextTab, i + n, hn);
+                         setTabAt(tab, i, fwd);
+                 }
+                 ...//省略无关代码
+     }
+   ```
+
+4. 此时线程2访问到了ForwardingNode节点，如果线程2执行的put或remove等写操作，那么就会先帮其扩容。如果线程2执行的是get等读方法，则会调用ForwardingNode的find方法，去nextTable里面查找相关元素。
+
+   ![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/6283837-84175020fe1fa8e1.png)
+
+5. 线程2加入扩容操作
+
+   ![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/6283837-0562184a535d7e53.png)
+
+6. 如果准备加入扩容的线程，发现以下情况，放弃扩容，直接返回。
+
+   - 发现transferIndex=0,即**所有node均已分配**
+   - 发现扩容线程已经达到**最大扩容线程数**
+
+![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/6283837-d1febe6c1f9379b1.png)
 
  
 
