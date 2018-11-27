@@ -149,6 +149,94 @@ cas设置transferIndex的源码如下：
 
 
 
+##  2.2 何时扩容
+
+###  2.2.1 当前容量超过阈值
+
+```java
+  final V putVal(K key, V value, boolean onlyIfAbsent) {
+        ...
+        addCount(1L, binCount);
+        ...
+  }
+```
+
+```java
+  private final void addCount(long x, int check) {
+        ...
+        if (check >= 0) {
+            Node<K,V>[] tab, nt; int n, sc;
+            //s>=sizeCtl 即容量达到扩容阈值，需要扩容
+            while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
+                   (n = tab.length) < MAXIMUM_CAPACITY) {
+               //调用transfer()扩容
+               ...
+            }
+        }
+    }
+```
+
+### 2.2.2 链表转化成红黑树
+
+当链表中元素个数超过默认设定（8个），当数组的大小还未超过64的时候，此时进行数组的扩容，如果超过则将链表转化成红黑树
+
+```java
+ final V putVal(K key, V value, boolean onlyIfAbsent) {
+        ...
+        if (binCount != 0) {
+                    //链表中元素个数超过默认设定（8个）
+                    if (binCount >= TREEIFY_THRESHOLD)
+                        treeifyBin(tab, i);
+                    if (oldVal != null)
+                        return oldVal;
+                    break;
+        }
+        ...
+ }
+      
+```
+
+```java
+    private final void treeifyBin(Node<K,V>[] tab, int index) {
+        Node<K,V> b; int n, sc;
+        if (tab != null) {
+            //数组的大小还未超过64
+            if ((n = tab.length) < MIN_TREEIFY_CAPACITY)
+                //扩容
+                tryPresize(n << 1);
+            else if ((b = tabAt(tab, index)) != null && b.hash >= 0) {
+                //转换成红黑树
+                ...
+            }
+        }
+    }
+```
+
+### 2.2.3 当发现其他线程扩容时，帮其扩容
+
+```java
+   final V putVal(K key, V value, boolean onlyIfAbsent) {
+      ...
+       //f.hash == MOVED 表示为：ForwardingNode，说明其他线程正在扩容
+       else if ((fh = f.hash) == MOVED)
+           tab = helpTransfer(tab, f);
+      ...
+   }
+   
+```
+
+ 
+
+# 2.3 扩容过程分析
+
+
+
+  
+
+ 
+
+ 
+
  
 
  
