@@ -79,7 +79,7 @@
 
 ConcurrentHashMap的状态图如下：
 
-![](https://upload-images.jianshu.io/upload_images/6283837-f2a6af20a4c73b93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/969/format/webp)
+![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/6283837-f2a6af20a4c73b93.png)
 
 ### 2.1.3 transferIndex属性
 
@@ -96,11 +96,11 @@ ConcurrentHashMap的状态图如下：
 
 1 在扩容之前，transferIndex 在数组的最右边 。此时有一个线程发现已经到达扩容阈值，准备开始扩容。
 
-![](https://upload-images.jianshu.io/upload_images/6283837-f2a6af20a4c73b93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/969/format/webp)
+![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/6283837-6a95de459a4f48d5.png)
 
 2 扩容线程，在迁移数据之前，首先要将transferIndex右移（以cas的方式修改 **transferIndex=transferIndex-stride(要迁移hash桶的个数)**），获取迁移任务。每个扩容线程都会通过for循环+CAS的方式设置transferIndex，因此可以确保多线程扩容的并发安全
 
-![](https://upload-images.jianshu.io/upload_images/6283837-f2a6af20a4c73b93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/969/format/webp)
+![](https://raw.githubusercontent.com/ligengwasd/blog/master/ConcurrentHashMap%E6%BA%90%E7%A0%81/images/6283837-7e10aa6066673c79.png)
 
  换个角度，我们可以将待迁移的table数组，看成一个任务队列，transferIndex看成任务队列的头指针。而扩容线程，就是这个队列的消费者。扩容线程通过CAS设置transferIndex索引的过程，就是消费者从任务队列中获取任务的过程。为了性能考虑，我们当然不会每次只获取一个任务（hash桶），因此ConcurrentHashMap规定，每次至少要获取16个迁移任务（迁移16个hash桶，MIN_TRANSFER_STRIDE = 16）
 
