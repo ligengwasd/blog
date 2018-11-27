@@ -42,7 +42,7 @@
 
 ## 2.1 扩容相关的属性
 
-### 2.1.1 nextTable
+### 2.1.1 nextTable属性
 
 扩容期间，将table数组中的元素 迁移到 nextTable。
 
@@ -81,7 +81,71 @@ ConcurrentHashMap的状态图如下：
 
 ![](https://upload-images.jianshu.io/upload_images/6283837-f2a6af20a4c73b93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/969/format/webp)
 
+### 2.1.3 transferIndex属性
 
+```java
+    private transient volatile int transferIndex;
+    
+     /**
+      扩容线程每次最少要迁移16个hash桶
+     */
+    private static final int MIN_TRANSFER_STRIDE = 16;
+```
+
+**扩容索引，表示已经分配给扩容线程的table数组索引位置。主要用来协调多个线程，并发安全地 获取迁移任务（hash桶）。**
+
+1 在扩容之前，transferIndex 在数组的最右边 。此时有一个线程发现已经到达扩容阈值，准备开始扩容。
+
+![](https://upload-images.jianshu.io/upload_images/6283837-f2a6af20a4c73b93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/969/format/webp)
+
+2 扩容线程，在迁移数据之前，首先要将transferIndex右移（以cas的方式修改 **transferIndex=transferIndex-stride(要迁移hash桶的个数)**），获取迁移任务。每个扩容线程都会通过for循环+CAS的方式设置transferIndex，因此可以确保多线程扩容的并发安全
+
+![](https://upload-images.jianshu.io/upload_images/6283837-f2a6af20a4c73b93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/969/format/webp)
+
+ 换个角度，我们可以将待迁移的table数组，看成一个任务队列，transferIndex看成任务队列的头指针。而扩容线程，就是这个队列的消费者。扩容线程通过CAS设置transferIndex索引的过程，就是消费者从任务队列中获取任务的过程。为了性能考虑，我们当然不会每次只获取一个任务（hash桶），因此ConcurrentHashMap规定，每次至少要获取16个迁移任务（迁移16个hash桶，MIN_TRANSFER_STRIDE = 16）
+
+cas设置transferIndex的源码如下：
+
+```java
+  private final void transfer(Node<K,V>[] tab, Node<K,V>[] nextTab) {
+        //计算每次迁移的node个数
+        if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
+            stride = MIN_TRANSFER_STRIDE; // 确保每次迁移的node个数不少于16个
+        ...
+        for (int i = 0, bound = 0;;) {
+            ...
+            //cas无锁算法设置 transferIndex = transferIndex - stride
+            if (U.compareAndSwapInt
+                         (this, TRANSFERINDEX, nextIndex,
+                          nextBound = (nextIndex > stride ?
+                                       nextIndex - stride : 0))) {
+                  ...
+                  ...
+            }
+            ...//省略迁移逻辑
+        }
+    }
+```
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
 
 
 ```java
