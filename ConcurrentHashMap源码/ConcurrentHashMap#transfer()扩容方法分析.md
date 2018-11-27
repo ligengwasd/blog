@@ -1,4 +1,4 @@
-## 先说结论
+# 1 - 先说结论
 
 首先说结论。源码加注释我会放在后面。该方法的执行逻辑如下：
 
@@ -37,8 +37,52 @@
 
 大体就是上的的 3 个步骤。
 
-再来看看源码和注释。
----------
+2 - 再来看看源码和注释。
+=========
+
+## 2.1 扩容相关的属性
+
+### 2.1.1 nextTable
+
+扩容期间，将table数组中的元素 迁移到 nextTable。
+
+```java
+    /**
+     * The next table to use; non-null only while resizing.
+       扩容时，将table中的元素迁移至nextTable . 扩容时非空
+     */
+    private transient volatile Node<K,V>[] nextTable;
+```
+
+### 2.1.2 sizeCtl属性
+
+```java
+    private transient volatile int sizeCtl;
+```
+
+**多线程之间，以volatile的方式读取sizeCtl属性，来判断ConcurrentHashMap当前所处的状态。通过cas设置sizeCtl属性，告知其他线程ConcurrentHashMap的状态变更**。
+
+不同状态，sizeCtl所代表的含义也有所不同。
+
+- 未初始化：
+  - sizeCtl=0：表示没有指定初始容量。
+  - sizeCtl>0：表示初始容量。
+
+- 初始化中：
+  - sizeCtl=-1,标记作用，告知其他线程，正在初始化
+- 正常状态：
+  - sizeCtl=0.75n ,扩容阈值
+
+- 扩容中:
+  - sizeCtl < 0 : 表示有其他线程正在执行扩容
+  - sizeCtl = (resizeStamp(n) << RESIZE_STAMP_SHIFT) + 2 :表示此时只有一个线程在执行扩容
+
+ConcurrentHashMap的状态图如下：
+
+![](https://upload-images.jianshu.io/upload_images/6283837-f2a6af20a4c73b93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/969/format/webp)
+
+
+
 
 ```java
 /**
