@@ -1,3 +1,5 @@
+原文：https://blog.csdn.net/u011392897/article/details/60479937
+
 # 主要改动
 
 参照对象为jdk1.7的ConcurrentHashMap，当然，熟悉jdk1.8的HashMap能够更好地理解一些改动，HashMap和ConcurrentHashMap本来就有很多共通的东西。
