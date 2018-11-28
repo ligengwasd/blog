@@ -718,6 +718,13 @@ private final void treeifyBin(Node<K,V>[] tab, int index) {
 
 get方法比较简单，给定一个key来确定value的时候，必须满足两个条件  key相同  hash值相同，对于节点可能在链表或树上的情况，需要分别去查找.
 
+**总结：**
+
+1. **表为空返回空。**
+2. **如果刚好是桶，直接返回。**
+3. **如果桶是treeNode或者ForwardingNode，直接调用find方法寻找。**
+4. **如果是链表，查找链表。**
+
 ```java
 public V get(Object key) {
         Node<K,V>[] tab; Node<K,V> e, p; int n, eh; K ek;
