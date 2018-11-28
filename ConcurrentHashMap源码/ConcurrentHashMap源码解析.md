@@ -713,7 +713,7 @@ public V get(Object key) {
                 if ((ek = e.key) == key || (ek != null && key.equals(ek)))
                     return e.val;
             }
-            //如果eh<0 说明这个节点在树上 直接寻找
+            //如果eh<0 可能是treeNode，也可能是ForwardingNode，直接调用find方法寻找
             else if (eh < 0)
                 return (p = e.find(h, key)) != null ? p.val : null;
              //否则遍历链表 找到对应的值并返回
