@@ -11,7 +11,7 @@ org.apache.ibatis.type
 
 # 2 - 类型转换逻辑
 
-![]()
+<img width="300" height="200" src="https://raw.githubusercontent.com/ligengwasd/blog/master/MyBatis%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/images/11.36.42.png"/>
 
 # 3 - TypeHandler类
 
@@ -30,4 +30,8 @@ public interface TypeHandler<T> {
 ```
 
 # 4 - TypeHandlerRegistry类
+
+```java
+
+```
 
