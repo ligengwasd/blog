@@ -31,7 +31,15 @@ public interface TypeHandler<T> {
 
 # 4 - TypeHandlerRegistry类
 
+**属性**：
+
 ```java
+// JdbcType类型和TypeHandler的对应关系
+private final Map<JdbcType, TypeHandler<?>> JDBC_TYPE_HANDLER_MAP = new EnumMap(JdbcType.class);
+// java类型，JdbcType类型，TypeHandler的对应关系
+private final Map<Type, Map<JdbcType, TypeHandler<?>>> TYPE_HANDLER_MAP = new ConcurrentHashMap();
+// TypeHandler的class类型，和TypeHandler的对应关系
+private final Map<Class<?>, TypeHandler<?>> ALL_TYPE_HANDLERS_MAP = new HashMap();
 
 ```
 
