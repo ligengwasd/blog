@@ -118,7 +118,7 @@ public class PerpetualCache implements Cache {
 
 ## 4.2 FifoCache类
 
-**功能**：限定缓存数量上限，超出上限，清除最老的缓存。
+**功能**：限定缓存数量上限，如果超出上限，清除最老的缓存。
 
 ```java
     private final Cache delegate;
@@ -151,9 +151,77 @@ public class PerpetualCache implements Cache {
 
 ```
 
+## 4.3 LruCache类
 
+**功能**：按照近期最少使用法（**Least Recently Used, LRU**）进行缓存清理。需要清理缓存时，会清除最近使用最少的缓存项。
 
+```java
+    private final Cache delegate;
+	// LinkedHashMap，有序map，记录key最近的使用情况
+    private Map<Object, Object> keyMap;
+	// 最少被使用的缓存项
+    private Object eldestKey;
+    
+	public LruCache(Cache delegate) {
+        this.delegate = delegate;
+        this.setSize(1024);
+    }
 
+    public void setSize(final int size) {
+        // LinkedHashMap初始化的三个参数，true表示该map记录的顺序是access order，也就是说调用LinkedHashMap.get()方法会改变其记录顺序
+        this.keyMap = new LinkedHashMap<Object, Object>(size, 0.75F, true) {
+            private static final long serialVersionUID = 4267176411845948333L;
+			// 调用LinkedHashMap.put()方法时，会调用该方法。
+            protected boolean removeEldestEntry(Entry<Object, Object> eldest) {
+                boolean tooBig = this.size() > size;
+                if (tooBig) {
+                    // 达到缓存上限，更新eldestKey，后面会删除该项
+                    LruCache.this.eldestKey = eldest.getKey();
+                }
 
+                return tooBig;
+            }
+        };
+    }
+	
+    public Object getObject(Object key) {
+        this.keyMap.get(key);//修改LinkedHashMap中记录顺序
+        return this.delegate.getObject(key);
+    }
+    public void putObject(Object key, Object value) {
+        this.delegate.putObject(key, value);//添加缓存项
+        this.cycleKeyList(key);
+    }
+    private void cycleKeyList(Object key) {
+        this.keyMap.put(key, key);
+        if (this.eldestKey != null) {// 不为空表示，已达到缓存上限
+            this.delegate.removeObject(this.eldestKey);// 删除最久未使用的缓存
+            this.eldestKey = null;
+        }
+    }
+```
 
+## 4.4 SoftCache & WeakCache
+
+**软引用**：内存不足是清除
+
+**弱引用**：下一次GC清除
+
+**虚引用**：必须指定引用队列，调用get方法始终返回null
+
+**引用队列**：创建SoftReference和WeakReference时可关联一个队列。
+
+## 4.5 ScheduledCache类
+
+**功能**：周期性清除所有缓存项
+
+## 4.6 LoggingCache类
+
+**功能**：添加日志
+
+## 4.7 SynchronizedCache类
+
+## 4.8 SerializedCache类
+
+**功能**：缓存序列化
 
