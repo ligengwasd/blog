@@ -28,3 +28,6 @@ public interface TypeHandler<T> {
 
 }
 ```
+
+# 4 - TypeHandlerRegistry类
+
