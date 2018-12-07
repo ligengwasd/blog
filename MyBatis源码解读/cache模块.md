@@ -120,6 +120,8 @@ public class PerpetualCache implements Cache {
 
 ## 4.2 FifoCache类
 
+**功能**：限定缓存数量上限，超出上限，清除最老的缓存。
+
 ```java
     private final Cache delegate;
 	// 记录key进入缓存的顺序，底层用LinkedList
