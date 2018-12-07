@@ -209,7 +209,71 @@ public class PerpetualCache implements Cache {
 
 **虚引用**：必须指定引用队列，调用get方法始终返回null
 
-**引用队列**：创建SoftReference和WeakReference时可关联一个队列。
+**引用队列：**创建SoftReference和WeakReference时可关联一个队列。当SoftReference所关联的对象被回收之后，会将SoftReference对象本身加入该队列。
+
+```java
+	// 在SoftCache中，最近使用的一部分缓存项不会被GC回收，这就是通过将其value添加到hardLinksToAvoidGarbageCollection形成强引用。用LinkedList实现。
+	private final Deque<Object> hardLinksToAvoidGarbageCollection;
+	// 引用队列，记录被回收的对象的<软引用>
+	private final ReferenceQueue<Object> queueOfGarbageCollectedEntries;
+    private final Cache delegate;
+	// 强链接的个数
+    private int numberOfHardLinks;
+
+    public SoftCache(Cache delegate) {
+        this.delegate = delegate;
+        this.numberOfHardLinks = 256;
+        this.hardLinksToAvoidGarbageCollection = new LinkedList();
+        this.queueOfGarbageCollectedEntries = new ReferenceQueue();
+    }
+    private static class SoftEntry extends SoftReference<Object> {
+        private final Object key;
+
+        SoftEntry(Object key, Object value, ReferenceQueue<Object> garbageCollectionQueue) {
+            super(value, garbageCollectionQueue);// value是软引用
+            this.key = key;// key是强引用
+        }
+    }
+    public void putObject(Object key, Object value) {
+        this.removeGarbageCollectedItems();
+        this.delegate.putObject(key, new SoftCache.SoftEntry(key, value, 			this.queueOfGarbageCollectedEntries));
+    }
+    private void removeGarbageCollectedItems() {
+        SoftCache.SoftEntry sv;
+        while((sv = (SoftCache.SoftEntry)this.queueOfGarbageCollectedEntries.poll()) != null) {
+			// 被GC回收的value对象对应的缓存项清除
+            this.delegate.removeObject(sv.key); 
+        }
+
+    }	
+    public Object getObject(Object key) {
+        Object result = null;
+        SoftReference<Object> softReference = (SoftReference)this.delegate.getObject(key);
+        if (softReference != null) {// 检测缓存中是否有对应的缓存项
+            result = softReference.get();
+            if (result == null) {// 已经被GC回收
+                this.delegate.removeObject(key);// 删除缓存
+            } else {
+                Deque var4 = this.hardLinksToAvoidGarbageCollection;
+                synchronized(this.hardLinksToAvoidGarbageCollection) {
+                    // 缓存项的value放在强引用队列里
+                    this.hardLinksToAvoidGarbageCollection.addFirst(result);
+                    if (this.hardLinksToAvoidGarbageCollection.size() > this.numberOfHardLinks) {
+                        // 强引用满了，删除最老的
+                        this.hardLinksToAvoidGarbageCollection.removeLast();
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public Object removeObject(Object key) {
+        this.removeGarbageCollectedItems();
+        return this.delegate.removeObject(key);
+    }
+```
 
 ## 4.5 ScheduledCache类
 
