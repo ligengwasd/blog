@@ -58,7 +58,7 @@ public Reflector(Class<?> clazz) {
 
 addSetMethods、addGetMethods、addGetFields、addSetFields方法在向上述集合添加元素时，会将相应的Method对象以及字段对应的Field对象统一封装成Invoker对象。
 
-<img width="374" height="101" src="https://raw.githubusercontent.com/ligengwasd/blog/master/MyBatis%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/images/3.14.56.png"/>
+<img width="374" height="101" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/3.14.56.png"/>
 
 ## 2.4 ReflectorFactory工厂类
 
