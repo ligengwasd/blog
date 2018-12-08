@@ -50,7 +50,7 @@ private static final Map<JdbcType, TypeHandler<?>> NULL_TYPE_HANDLER_MAP = new H
 
 TypeHandlerRegistry.register()方法实现了注册TypeHandler对象的功能，即向上面四个结合中添加TypeHandler对象。TypeHandlerRegistry中共有12个register方法，其重载关系如下图。
 
-<img width="600" height="400" src="https://raw.githubusercontent.com/ligengwasd/blog/master/MyBatis%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/images/12.40.15.png"/>
+<img width="660" height="310" src="https://raw.githubusercontent.com/ligengwasd/blog/master/MyBatis%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/images/12.40.15.png"/>
 
 主要是1-6这6个重载方法实现注册功能，其余方法主要完成强制类型转换或初始化TypeHandler功能。
 
