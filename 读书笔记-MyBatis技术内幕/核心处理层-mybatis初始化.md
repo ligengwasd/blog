@@ -25,7 +25,7 @@ public SqlSessionFactory build(InputStream inputStream, String environment, Prop
 ```
 SqlSessionFactoryBuilder.build()会创建XMLConfigBuilder对象来解析mybatis-config.xml配置文件，而XMLConfigBuilder继承自BaseBuilder抽象类，BaseBuilder子类如图
 
-<img width="872" height="384" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/11.29.15.png"/>
+<img width="663" height="157" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/11.29.15.png"/>
 
 ```java
 // BaseBuilder只有三个属性
@@ -174,4 +174,44 @@ private void mapperElement(XNode parent) throws Exception {
 ```
 
 # 3 - XMLMapperBuilder类
+
+## 3.1 解析入口
+
+```java
+public void parse() {
+  if (!configuration.isResourceLoaded(resource)) {
+    configurationElement(parser.evalNode("/mapper"));// 处理<mapper>节点
+    configuration.addLoadedResource(resource);// 解析过的映射文件，放入Configuration的loadedResources(是一个HashSet)属性中保存。
+    bindMapperForNamespace();// 注册mapper接口
+  }
+
+  parsePendingResultMaps();// 处理configurationElement()方法中解析失败的<resultMap>节点
+  parsePendingChacheRefs();// 处理configurationElement()方法中解析失败的<cache-ref>节点
+  parsePendingStatements();// 处理configurationElement()方法中解析失败的SQL语句节点
+}
+private void configurationElement(XNode context) {
+    try {
+      String namespace = context.getStringAttribute("namespace");
+      if (namespace == null || namespace.equals("")) {
+        throw new BuilderException("Mapper's namespace cannot be empty");
+      }
+      // 记录命名空间
+      builderAssistant.setCurrentNamespace(namespace);
+      // 解析<cache-ref>节点
+      cacheRefElement(context.evalNode("cache-ref"));
+      // 解析<cache>节点
+      cacheElement(context.evalNode("cache"));
+      // 解析<parameterMap>节点
+      parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      // 解析<resultMap>节点
+      resultMapElements(context.evalNodes("/mapper/resultMap"));
+      // 解析<sql>节点
+      sqlElement(context.evalNodes("/mapper/sql"));
+      // 解析<select|insert|update|delete>节点
+      buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
+    } catch (Exception e) {
+      throw new BuilderException("Error parsing Mapper XML. Cause: " + e, e);
+    }
+  }
+```
 
