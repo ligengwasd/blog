@@ -61,7 +61,7 @@ TypeHandlerRegistry.register()方法实现了注册TypeHandler对象的功能，
 
 public <T> void register(Class<T> type, JdbcType jdbcType, TypeHandler<? extends T> handler) {
   register((Type) type, jdbcType, handler);
-}
+} 
 
 private void register(Type javaType, JdbcType jdbcType, TypeHandler<?> handler) {
   if (javaType != null) {
