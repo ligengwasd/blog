@@ -61,7 +61,7 @@ private String environment;
 private ReflectorFactory localReflectorFactory = new DefaultReflectorFactory();
 ```
 
-## 2.2 解析入口
+## 2.2 解析器入口
 
 XMLConfigBuilder.parse()方法是解析mybatis-config.xml文件的入口，通过调用XMLConfigBuilder.parseConfiguration方法实现整个解析过程：
 
@@ -100,7 +100,7 @@ private void parseConfiguration(XNode root) {
 }
 ```
 
-## 2.3 分析解析typeAliases节点的方法
+## 2.3 解析typeAliases节点
 
 ```java
 private void typeAliasesElement(XNode parent) {
@@ -129,7 +129,7 @@ private void typeAliasesElement(XNode parent) {
 }
 ```
 
-## 2.4 分析解析mappers节点的方法
+## 2.4 解析mappers节点
 
 mybatis初始化除了加载mybatis-config.xml配置文件，还会加载全部的映射配置文件。`<mappers>`节点会告诉Mybatis去那些位置查找映射文件以及使用了配置注解标识的接口。
 
@@ -175,7 +175,9 @@ private void mapperElement(XNode parent) throws Exception {
 
 # 3 - XMLMapperBuilder类
 
-## 3.1 解析入口
+**功能：解析mapper文件**
+
+## 3.1 解析器入口
 
 ```java
 public void parse() {
@@ -213,5 +215,90 @@ private void configurationElement(XNode context) {
       throw new BuilderException("Error parsing Mapper XML. Cause: " + e, e);
     }
   }
+```
+
+## 3.2 解析resultMap节点
+
+&lt;resultMap>节点下除了&lt;discriminator>子节点的其它子节点，都会被解析成对应的ResultMapping对象。
+
+ResultMapping类核心字段
+
+```java
+private Configuration configuration;
+private String property;
+private String column;
+private Class<?> javaType;
+private JdbcType jdbcType;
+private TypeHandler<?> typeHandler;
+// 对应resultMap属性
+private String nestedResultMapId;
+// 对应select属性，引用另一个<select>节点
+private String nestedQueryId;
+private Set<String> notNullColumns;
+private String columnPrefix;
+private List<ResultFlag> flags;
+private List<ResultMapping> composites;
+private String resultSet;
+private String foreignColumn;
+private boolean lazy;// 对应fetchType属性
+```
+
+待续。。
+
+## 3.3 XMLStatementBuilder类
+
+**功能：解析mapper文件中<select|insert|update|delete>节点**
+
+Mybatis使用SqlSource接口表示映射文件或注解中定义的SQL语句，但它表示的是不能被数据库执行的原始SQL，里面包含动态SQL语句相关的节点或者占位符需要解析的元素。
+
+```java
+public interface SqlSource {
+  // 根据原始SQL和参数，返回数据库可执行的SQL
+  BoundSql getBoundSql(Object parameterObject);
+
+}
+```
+
+Mybatis使用MappedStatement表示映射配置文件中定义的SQL节点，重要属性如下：
+
+```java
+// 节点id属性，包括命名空间
+private String resource;
+private SqlSource sqlSource;// 对应一条SQL
+// SQL类型
+private SqlCommandType sqlCommandType;
+```
+
+解析SQL的入口函数是 `XMLStatementBuilder.parseStatementNode()` 方法
+
+# 4 - 绑定mapper接口
+
+在`XMLMapperBuilder.bindMapperForNamespace()`方法中完成了配置文件与对应的mapper接口的绑定。
+
+```java
+private void bindMapperForNamespace() {
+  // 获取命名空间
+  String namespace = builderAssistant.getCurrentNamespace();
+  if (namespace != null) {
+    Class<?> boundType = null;
+    try {
+      // 解析命名空间对应的类型
+      boundType = Resources.classForName(namespace);
+    } catch (ClassNotFoundException e) {
+      //ignore, bound type is not required
+    }
+    if (boundType != null) {
+      if (!configuration.hasMapper(boundType)) {// 是否已加载了boundType接口
+        // Spring may not know the real resource name so we set a flag
+        // to prevent loading again this resource from the mapper interface
+        // look at MapperAnnotationBuilder#loadXmlResource
+        // 解析过的mapper文件进入集合记录下来
+        configuration.addLoadedResource("namespace:" + namespace);
+        // 注册mapper接口
+        configuration.addMapper(boundType);
+      }
+    }
+  }
+}
 ```
 
