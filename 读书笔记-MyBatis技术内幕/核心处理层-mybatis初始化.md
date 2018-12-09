@@ -271,7 +271,7 @@ private SqlCommandType sqlCommandType;
 
 解析SQL的入口函数是 `XMLStatementBuilder.parseStatementNode()` 方法
 
-# 4 - 绑定mapper接口
+## 3.4 - 绑定mapper接口
 
 在`XMLMapperBuilder.bindMapperForNamespace()`方法中完成了配置文件与对应的mapper接口的绑定。
 
@@ -301,4 +301,3 @@ private void bindMapperForNamespace() {
   }
 }
 ```
-
