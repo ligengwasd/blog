@@ -151,7 +151,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
 
 下图描述了示例的执行流程：
 
-<img width="819" height="195" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/9.28.24.png"/>
+<img width="1154" height="517" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/9.28.24.png"/>
 
 
 
