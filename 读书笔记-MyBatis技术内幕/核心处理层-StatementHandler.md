@@ -34,5 +34,65 @@ StatementHandler接口的多种实现
 
 <img width="1162" height="330" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/11.29.51.png"/>
 
+# 2 - RoutingStatementHandler
 
+RoutingStatementHandler很简单就是一个路由的作用。
+
+```
+public RoutingStatementHandler(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+
+  switch (ms.getStatementType()) {
+    case STATEMENT:
+      delegate = new SimpleStatementHandler(executor, ms, parameter, rowBounds, resultHandler, boundSql);
+      break;
+    case PREPARED:
+      delegate = new PreparedStatementHandler(executor, ms, parameter, rowBounds, resultHandler, boundSql);
+      break;
+    case CALLABLE:
+      delegate = new CallableStatementHandler(executor, ms, parameter, rowBounds, resultHandler, boundSql);
+      break;
+    default:
+      throw new ExecutorException("Unknown statement type: " + ms.getStatementType());
+  }
+
+}
+```
+
+# 3 - BaseStatementHandler
+
+BaseStatementHandler是一个实现了StatementHandler接口的抽象类，它只提供了一些参数绑定相关的方法，并没有实现操作数据库的方法。核心字段如下：
+
+```java
+// 记录使用的ParamterHanlder对象，ParameterHandler的主要功能是为SQL语句绑定实参，
+// 也就是使用传入的实参替换SQL语句的"?"占位符，后面详细介绍。
+protected final ParameterHandler parameterHandler;
+// 记录使用的ResultSetHandler对象，其主要功能是将执行结果映射成结果对象
+protected final ResultSetHandler resultSetHandler;
+
+protected final Executor executor;
+protected final MappedStatement mappedStatement;
+// 记录了用户设置的offset和limit，用于在结果集中定位映射的起始位置和结束位置
+protected final RowBounds rowBounds;
+
+protected BoundSql boundSql;
+```
+
+在BaseStatementHandler的构造方法中还会调用`KeyGenerator.processBefore`方法初始化SQL语句的主键，具体实现如下
+
+```java
+protected BaseStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+	……
+    if (boundSql == null) { // issue #435, get the key before calculating the statement
+      generateKeys(parameterObject);
+      boundSql = mappedStatement.getBoundSql(parameterObject);
+    }
+    ……
+  }
+protected void generateKeys(Object parameter) {
+  KeyGenerator keyGenerator = mappedStatement.getKeyGenerator();
+  ErrorContext.instance().store();
+  keyGenerator.processBefore(executor, mappedStatement, null, parameter);
+  ErrorContext.instance().recall();
+}
+```
 
