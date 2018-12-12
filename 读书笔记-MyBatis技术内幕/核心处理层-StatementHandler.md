@@ -38,7 +38,7 @@ public interface StatementHandler {
 
 `RoutingStatementHandler`很简单就是一个路由的作用。
 
-```
+```java
 public RoutingStatementHandler(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
 
   switch (ms.getStatementType()) {
@@ -113,4 +113,70 @@ public Statement prepare(Connection connection, Integer transactionTimeout) thro
 ```
 
 `BaseStatementHandler`另一个重要的组件`ParameterHandler`
+
+# 4 - ParameterHandler
+
+在BoundSql中记录的SQL中可能包含"?"占位符，而每个占位符都对应了`BoundSql.parameterMappings`list集合中的一个元素，在该`ParameterMapping`对象中记录了对应的参数名称以及该参数的相关属性
+
+在`ParameterHandler`接口只定义了一个`setParameters()`方法，改方法负责调用`PreparedStatement.set()*`方法为SQL语句绑定实参。`ParameterHandler`只有一个实现类`DefaultParameterHandler`。DefaultParameterHandler的核心字段如下
+
+```java
+private final TypeHandlerRegistry typeHandlerRegistry;
+// 记录SQL节点相关的配置信息
+private final MappedStatement mappedStatement;
+// 用户传入的实参对象
+private final Object parameterObject;
+// 相应的PreparedStatment对象是boundSql中记录的sql创建的，boundSql中还记录了对应的参数相关的属性。
+private BoundSql boundSql;
+private Configuration configuration;
+```
+
+`DefaultParameterHandler.setParameters`方法会遍历`BoundSql.parameterMappings`结合中记录的`ParameterMapping`对象，并根据其中记录的参数名称查找相应实参，然后语言SQL语句绑定。setParameters代码：
+
+```java
+public void setParameters(PreparedStatement ps) {
+  ……
+  // 取出sql中的参数列表
+  List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
+  if (parameterMappings != null) {
+    for (int i = 0; i < parameterMappings.size(); i++) {
+      ParameterMapping parameterMapping = parameterMappings.get(i);
+      // 过滤存储过程中的输出参数
+      if (parameterMapping.getMode() != ParameterMode.OUT) {
+        Object value;// 记录绑定的实参
+        String propertyName = parameterMapping.getProperty();// 获取参数名称
+        if (boundSql.hasAdditionalParameter(propertyName)) { // issue #448 ask first for additional params
+          // 获取对应的实参值
+          value = boundSql.getAdditionalParameter(propertyName);
+        } else if (parameterObject == null) {// 实参为空
+          value = null;
+        } else if (typeHandlerRegistry.hasTypeHandler(parameterObject.getClass())) {
+          // 实参可以直接通过TypeHandler转化成JbbcType
+          value = parameterObject;
+        } else {
+          // 获取对象中相应的属性值或者查找Map对象中的值
+          MetaObject metaObject = configuration.newMetaObject(parameterObject);
+          value = metaObject.getValue(propertyName);
+        }
+        // 获取TypeHandler
+        TypeHandler typeHandler = parameterMapping.getTypeHandler();
+        JdbcType jdbcType = parameterMapping.getJdbcType();
+        if (value == null && jdbcType == null) {
+          jdbcType = configuration.getJdbcTypeForNull();
+        }
+        try {
+          // 通过TypeHandler.setParameter方法调用PreparedStatement.set*()方法来为SQL语句绑定相应的实参
+          typeHandler.setParameter(ps, i + 1, value, jdbcType);
+        } catch (TypeException e) {
+          throw new TypeException("Could not set parameters for mapping: " + parameterMapping + ". Cause: " + e, e);
+        } catch (SQLException e) {
+          throw new TypeException("Could not set parameters for mapping: " + parameterMapping + ". Cause: " + e, e);
+        }
+      }
+    }
+  }
+}
+```
+
+为SQL语句绑定实参之后，就可以调用`Statement`相应的`excute()`方法，将SQL语句交给数据库执行。
 
