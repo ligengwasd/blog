@@ -196,3 +196,50 @@ protected Statement instantiateStatement(Connection connection) throws SQLExcept
 }
 ```
 
+`SimpleStatementHandler.update()`方法负责执行insert、update、delete等类型的SQL语句，并且会根据配置的KeyGenerator获取数据库生成的主键，具体实现如下：
+
+```java
+public int update(Statement statement) throws SQLException {
+  String sql = boundSql.getSql();
+  Object parameterObject = boundSql.getParameterObject();
+  KeyGenerator keyGenerator = mappedStatement.getKeyGenerator();
+  int rows;
+  if (keyGenerator instanceof Jdbc3KeyGenerator) {
+    statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
+    rows = statement.getUpdateCount();
+    keyGenerator.processAfter(executor, mappedStatement, statement, parameterObject);
+  } else if (keyGenerator instanceof SelectKeyGenerator) {
+    statement.execute(sql);
+    rows = statement.getUpdateCount();
+    keyGenerator.processAfter(executor, mappedStatement, statement, parameterObject);
+  } else {
+    statement.execute(sql);
+    rows = statement.getUpdateCount();
+  }
+  return rows;
+}
+```
+
+# 6 - PreparedStatementHandler
+
+```java
+protected Statement instantiateStatement(Connection connection) throws SQLException {
+  String sql = boundSql.getSql();
+  if (mappedStatement.getKeyGenerator() instanceof Jdbc3KeyGenerator) {
+    String[] keyColumnNames = mappedStatement.getKeyColumns();
+    if (keyColumnNames == null) {
+      // 返回数据库生成的主键
+      return connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+    } else {
+      // 在insert语句完成之后，会将keyColumnNames指定的列返回
+      return connection.prepareStatement(sql, keyColumnNames);
+    }
+  } else if (mappedStatement.getResultSetType() != null) {
+    // 设置结果集是否可以滚动以及游标是否可以上下滚动，设置结果集是否可更新。
+    return connection.prepareStatement(sql, mappedStatement.getResultSetType().getValue(), ResultSet.CONCUR_READ_ONLY);
+  } else {
+    // 创建普通的PreparedStament对象。
+    return connection.prepareStatement(sql);
+  }
+}
+```
