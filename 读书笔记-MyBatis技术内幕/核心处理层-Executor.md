@@ -48,3 +48,7 @@ Executor的子类：
 
 <img width="565" height="176" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/2.27.54.png"/>
 
+`CachingExecutor`：功能是为Executor添加二级缓存。
+
+# 3 - 
+
