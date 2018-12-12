@@ -180,3 +180,19 @@ public void setParameters(PreparedStatement ps) {
 
 为SQL语句绑定实参之后，就可以调用`Statement`相应的`excute()`方法，将SQL语句交给数据库执行。
 
+# 5 - SimpleStatementHandler
+
+`SimpleStatementHandler`继承了`BaseStatementHandler`抽象类。它底层使用`java.sql.Statement`对象完成数据库操作，所以SQL语句不能有占位符，相应的`SimpleStatementHandler.parameterize()`方法是空实现。
+
+`SimpleStatementHandler.instantiateStatement()`方法直接通过jdbc connection创建statement对象，具体实现如下：
+
+```java
+protected Statement instantiateStatement(Connection connection) throws SQLException {
+  if (mappedStatement.getResultSetType() != null) {
+    return connection.createStatement(mappedStatement.getResultSetType().getValue(), ResultSet.CONCUR_READ_ONLY);
+  } else {
+    return connection.createStatement();
+  }
+}
+```
+
