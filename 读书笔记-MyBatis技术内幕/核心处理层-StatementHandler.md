@@ -1,6 +1,6 @@
 # 1 - StatementHandler
 
-StatementHandler接口是MyBatis的核心接口之一，完成了MyBatis最核心的工作。也是Executor的基础。
+`StatementHandler`接口是MyBatis的核心接口之一，完成了MyBatis最核心的工作。也是`Executor`的基础。
 
 ```java
 public interface StatementHandler {
@@ -30,13 +30,13 @@ public interface StatementHandler {
 }
 ```
 
-StatementHandler接口的多种实现
+`StatementHandler`接口的多种实现
 
 <img width="1162" height="330" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/11.29.51.png"/>
 
 # 2 - RoutingStatementHandler
 
-RoutingStatementHandler很简单就是一个路由的作用。
+`RoutingStatementHandler`很简单就是一个路由的作用。
 
 ```
 public RoutingStatementHandler(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
@@ -60,7 +60,7 @@ public RoutingStatementHandler(Executor executor, MappedStatement ms, Object par
 
 # 3 - BaseStatementHandler
 
-BaseStatementHandler是一个实现了StatementHandler接口的抽象类，它只提供了一些参数绑定相关的方法，并没有实现操作数据库的方法。核心字段如下：
+`BaseStatementHandler`是一个实现了`StatementHandler`接口的抽象类，它只提供了一些参数绑定相关的方法，并没有实现操作数据库的方法。核心字段如下：
 
 ```java
 // 记录使用的ParamterHanlder对象，ParameterHandler的主要功能是为SQL语句绑定实参，
@@ -77,7 +77,7 @@ protected final RowBounds rowBounds;
 protected BoundSql boundSql;
 ```
 
-在BaseStatementHandler的构造方法中还会调用`KeyGenerator.processBefore`方法初始化SQL语句的主键，具体实现如下
+在`BaseStatementHandler`的构造方法中还会调用`KeyGenerator.processBefore`方法初始化SQL语句的主键，具体实现如下
 
 ```java
 protected BaseStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
@@ -91,8 +91,26 @@ protected BaseStatementHandler(Executor executor, MappedStatement mappedStatemen
 protected void generateKeys(Object parameter) {
   KeyGenerator keyGenerator = mappedStatement.getKeyGenerator();
   ErrorContext.instance().store();
+  // 调用KeyGenerator.processBefore方法
   keyGenerator.processBefore(executor, mappedStatement, null, parameter);
   ErrorContext.instance().recall();
 }
 ```
+
+`BaseStatementHandler`实现了`StatementHandler`接口中的`prepare()`方法
+
+```java
+public Statement prepare(Connection connection, Integer transactionTimeout) throws SQLException {
+  ……
+    // 初始化java.sql.Statement对象
+    statement = instantiateStatement(connection);
+    // 设置超时时间
+    setStatementTimeout(statement, transactionTimeout);
+    // 设置fetchSize
+    setFetchSize(statement);
+  ……
+}
+```
+
+`BaseStatementHandler`另一个重要的组件`ParameterHandler`
 
