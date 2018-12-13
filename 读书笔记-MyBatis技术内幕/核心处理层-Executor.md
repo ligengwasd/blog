@@ -68,9 +68,69 @@ protected Configuration configuration;
 
 ## 3.2 一级缓存简介
 
-会话级别的缓存，在MyBatis中没创建一个`SQLSession`对象，就表示开启一次数据库会话。生命周期与SQLSession（Executor）相同。
+会话级别的缓存，在MyBatis中每创建一个`SQLSession`对象，就表示开启一次数据库会话。生命周期与SQLSession（Executor）相同。
+
+Executor.update、close方法会让缓存失效。
 
 ## 3.3 一级缓存的管理
+
+### 3.3.1 创建缓存键的方法
+
+**可以看到`CacheKey`由MappedStatement的id、对应的offset和limit、SQL语句（“包含？占位符”）、用户传入的实参、Environment的id五部分组成。**
+
+```java
+public CacheKey createCacheKey(MappedStatement ms, Object parameterObject, RowBounds rowBounds, BoundSql boundSql) {
+  if (closed) {
+    throw new ExecutorException("Executor was closed.");
+  }
+  CacheKey cacheKey = new CacheKey();
+  cacheKey.update(ms.getId());// 将MappedStatement的id添加到CacheKey中
+  cacheKey.update(rowBounds.getOffset());// 将offset添加到CacheKey中
+  cacheKey.update(rowBounds.getLimit());// 将limit添加到CacheKey中
+  cacheKey.update(boundSql.getSql());// 将SQL语句添加到CacheKey中
+  List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
+  TypeHandlerRegistry typeHandlerRegistry = ms.getConfiguration().getTypeHandlerRegistry();
+  // mimic DefaultParameterHandler logic
+  // 获取用户传入的实参，并添加到CacheKey中
+  for (ParameterMapping parameterMapping : parameterMappings) {
+    if (parameterMapping.getMode() != ParameterMode.OUT) {// 过滤输出类型的参数
+      Object value;
+      String propertyName = parameterMapping.getProperty();
+      if (boundSql.hasAdditionalParameter(propertyName)) {
+        value = boundSql.getAdditionalParameter(propertyName);
+      } else if (parameterObject == null) {
+        value = null;
+      } else if (typeHandlerRegistry.hasTypeHandler(parameterObject.getClass())) {
+        value = parameterObject;
+      } else {
+        MetaObject metaObject = configuration.newMetaObject(parameterObject);
+        value = metaObject.getValue(propertyName);
+      }
+      cacheKey.update(value);
+    }
+  }
+  if (configuration.getEnvironment() != null) {
+    // issue #176
+    // 如果Environment不为空，添加到CacheKey中
+    cacheKey.update(configuration.getEnvironment().getId());
+  }
+  return cacheKey;
+}
+```
+
+### 3.3.2 
+
+```java
+public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
+   BoundSql boundSql = ms.getBoundSql(parameter);
+   CacheKey key = createCacheKey(ms, parameter, rowBounds, boundSql);
+   return query(ms, parameter, rowBounds, resultHandler, key, boundSql);
+}
+```
+
+
+
+
 
 ## 3.4 事务相关操作
 
