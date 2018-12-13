@@ -85,5 +85,11 @@
 
 - 使用句柄访问
 
+  Java堆中划分出一块内存来作为句柄池。reference中存储的是对象的句柄地址，而句柄中包含了对象实例数据和类型数据各自的具体地址信息。如图：
+
+  <img width="750" height="340" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/1.36.10.png"/>
+
 - 直接访问
+
+  <img width="750" height="340" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/1.36.21.png"/>
 
