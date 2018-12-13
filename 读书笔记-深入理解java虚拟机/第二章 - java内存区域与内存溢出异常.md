@@ -93,3 +93,4 @@
 
   <img width="750" height="340" src="https://raw.githubusercontent.com/ligengwasd/blog/master/读书笔记-MyBatis技术内幕/images/1.36.21.png"/>
 
+HotSpot vm采用的是第二种方式。
