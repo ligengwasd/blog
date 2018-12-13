@@ -50,5 +50,27 @@ Executor的子类：
 
 `CachingExecutor`：功能是为Executor添加二级缓存。
 
-# 3 - 
+# 3 - BaseExecutor
+
+## 3.1 属性
+
+```java
+protected Transaction transaction;
+protected Executor wrapper;
+// 延迟加载队列
+protected ConcurrentLinkedQueue<DeferredLoad> deferredLoads;
+// 一级缓存，用于缓存该Executor对象查询结果集映射得到的结果对象
+protected PerpetualCache localCache;
+// 一级缓存，用于缓存输出类型的参数。
+protected PerpetualCache localOutputParameterCache;
+protected Configuration configuration;
+```
+
+## 3.2 一级缓存简介
+
+会话级别的缓存，在MyBatis中没创建一个`SQLSession`对象，就表示开启一次数据库会话。生命周期与SQLSession（Executor）相同。
+
+## 3.3 一级缓存的管理
+
+## 3.4 事务相关操作
 
