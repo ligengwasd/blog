@@ -52,6 +52,15 @@ Executor的子类：
 
 # 3 - BaseExecutor
 
+采用模板方法，如update()方法最终调用的doUpdate()方法，而doUpdate交给子类实现。继承BaseExecutor的子类只要实现doUpdate()、doQuery()、doQueryCursor()、doFlushStatements()四个方法，其它功能在BaseExecutor中实现。
+
+**BaseExecutor两大功能：**
+
+- **缓存管理（包括延迟加载）**
+- **事务管理**
+
+
+
 ## 3.1 属性
 
 ```java
@@ -64,6 +73,8 @@ protected PerpetualCache localCache;
 // 一级缓存，用于缓存输出类型的参数。
 protected PerpetualCache localOutputParameterCache;
 protected Configuration configuration;
+// 用来记录嵌套查询的层数，和DefaultResultHandler类有关。
+protected int queryStack;
 ```
 
 ## 3.2 一级缓存简介
