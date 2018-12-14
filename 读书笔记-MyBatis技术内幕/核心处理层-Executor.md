@@ -261,9 +261,10 @@ public void load() {
 }
 ```
 
+### 3.3.6 update方法
 
+执行SQL(包括update、delete、insert)前清除缓存。
 
 ## 3.4 事务相关操作
 
-
-
+在`BatchExecutor`实现中，可以缓存多条SQL语句，等待合适的时机将缓存的多条SQL一起执行。`Executor.flushStatements()`方法主要针对批处理多条SQL语句的，它会调用`doFlushStatements()`这个基本方法处理Executor中缓存的多条SQL语句。在BatchExecutor.commit、rollback方法中都会首先调用flushStatements方法，然后再执行相关事务操作。
