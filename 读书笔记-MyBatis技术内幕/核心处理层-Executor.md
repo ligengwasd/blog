@@ -156,13 +156,17 @@ public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBoun
   }
   if (queryStack == 0) {
     for (DeferredLoad deferredLoad : deferredLoads) {
-      // 延迟加载的相关内容，后面介绍。
+      // 在最外层的查询结束时，所有嵌套查询也已经完成，相关缓存也已经完全加载，
+      // 所以在这里可以触发DeferredLoad记载一级缓存中记录的嵌套查询的结果对象。
       deferredLoad.load();
     }
     // issue #601
+    // 加载完成后清空deferredLoads集合。
     deferredLoads.clear();
     if (configuration.getLocalCacheScope() == LocalCacheScope.STATEMENT) {
       // issue #482
+      // 根据LocalCacheScope配置决定是否清空一级缓存，
+      // LocalCacheScope配置是影响一级缓存中结果对象存活时长的第二个方面
       clearLocalCache();
     }
   }
