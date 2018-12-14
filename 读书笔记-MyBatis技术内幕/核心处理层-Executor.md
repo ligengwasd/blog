@@ -279,3 +279,41 @@ public void load() {
 ## 3.4 事务相关操作
 
 在`BatchExecutor`实现中，可以缓存多条SQL语句，等待合适的时机将缓存的多条SQL一起执行。`Executor.flushStatements()`方法主要针对批处理多条SQL语句的，它会调用`doFlushStatements()`这个基本方法处理Executor中缓存的多条SQL语句。在BatchExecutor.commit、rollback方法中都会首先调用flushStatements方法，然后再执行相关事务操作。
+
+# 4 - SimpleExecutor
+
+继承自BaseExecutor类，实现doUpdate()、doQuery()、doQueryCursor()、doFlushStatements()四个方法即可。
+
+看下doUpdate()方法：
+
+```java
+public <E> List<E> doQuery(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
+  Statement stmt = null;
+  try {
+    Configuration configuration = ms.getConfiguration();
+    StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, resultHandler, boundSql);
+    stmt = prepareStatement(handler, ms.getStatementLog());
+    return handler.<E>query(stmt, resultHandler);
+  } finally {
+    closeStatement(stmt);
+  }
+}
+```
+
+prepareStatement方法的实现
+
+```java
+private Statement prepareStatement(StatementHandler handler, Log statementLog) throws SQLException {
+  Statement stmt;
+  Connection connection = getConnection(statementLog);
+  stmt = handler.prepare(connection, transaction.getTimeout());// 创建Statement对象
+  handler.parameterize(stmt);// 处理占位符
+  return stmt;
+}
+```
+
+# 5 - ReuseExecutor
+
+# 6 - BatchExecutor
+
+# 7 - CachingExecutor
