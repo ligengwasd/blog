@@ -26,7 +26,7 @@ public interface Executor {
   void rollback(boolean required) throws SQLException;
   // 创建CacheKey
   CacheKey createCacheKey(MappedStatement ms, Object parameterObject, RowBounds rowBounds, BoundSql boundSql);
-  // 查找焕春
+  // 查找缓存
   boolean isCached(MappedStatement ms, CacheKey key);
   // 清空一级缓存
   void clearLocalCache();
