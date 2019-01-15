@@ -4,6 +4,8 @@
 
 # 1、递归解法
 
+<img width="1008" height="500" src="https://raw.githubusercontent.com/ligengwasd/blog/master/数据结构预算法/images/1.jpg"/>
+
 思路：
 
 先固定一个字符，然后将固定的字符与它后面的每一个进行交换，一直递归下去，直到固定的字符后面只有一个字符
@@ -61,7 +63,7 @@ public class Q46_Permutations {
 T[i]下一个序列T[i+1]是在所有序列中比T[i]大，且相邻的序列。关于怎么找到这个元素，我们还是从一个例子来入手吧。 
 现在假设序列T[i] = {6, 4, 2, 8, 3, 1}，那么我们可以通过如下两步找到它的下一个序列。 
 
-
+<img width="1008" height="500" src="https://raw.githubusercontent.com/ligengwasd/blog/master/数据结构预算法/images/2.jpg"/>
 
 
 
