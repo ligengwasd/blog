@@ -45,16 +45,14 @@ InnoDB 支持`多粒度锁（multiple granularity locking）`，它允许`行级
 
 事务 A 获取了某一行的排他锁，并未提交：
 
-```
+```sql
 SELECT * FROM users WHERE id = 6 FOR UPDATE;
-复制代码
 ```
 
 事务 B 想要获取 `users` 表的表锁：
 
-```
+```sql
 LOCK TABLES users READ;
-复制代码
 ```
 
 因为共享锁与排他锁`互斥`，所以事务 B 在视图对 `users` 表加共享锁的时候，必须保证：
@@ -88,18 +86,16 @@ LOCK TABLES users READ;
 
 `事务 A` 获取了某一行的排他锁，并未提交：
 
-```
+```sql
 SELECT * FROM users WHERE id = 6 FOR UPDATE;
-复制代码
 ```
 
 此时 `users` 表存在两把锁：`users` 表上的**意向排他锁**与 id 为 6 的数据行上的**排他锁**。
 
 事务 B 想要获取 users 表的共享锁：
 
-```
+```sql
 LOCK TABLES users READ;
-复制代码
 ```
 
 此时`事务 B` 检测事务 A 持有 `users` 表的**意向排他锁**，就可以得知`事务 A` 必然持有该表中某些数据行的**排他锁**，那么`事务 B` 对 `users` 表的加锁请求就会被排斥（阻塞），而无需去检测表中的每一行数据是否存在排他锁。
@@ -127,9 +123,8 @@ LOCK TABLES users READ;
 
 `事务 A` 先获取了某一行的**排他锁**，并未提交：
 
-```
+```sql
 SELECT * FROM users WHERE id = 6 FOR UPDATE;
-复制代码
 ```
 
 1. `事务 A` 获取了 `users` 表上的**意向排他锁**。
@@ -137,9 +132,8 @@ SELECT * FROM users WHERE id = 6 FOR UPDATE;
 
 之后`事务 B` 想要获取 `users` 表的**共享锁**：
 
-```
+```sql
 LOCK TABLES users READ;
-复制代码
 ```
 
 1. `事务 B` 检测到`事务 A` 持有 `users` 表的**意向排他锁**。
@@ -147,9 +141,8 @@ LOCK TABLES users READ;
 
 最后`事务 C` 也想获取 `users` 表中某一行的**排他锁**：
 
-```
+```sql
 SELECT * FROM users WHERE id = 5 FOR UPDATE;
-复制代码
 ```
 
 1. `事务 C` 申请 `users` 表的**意向排他锁**。
