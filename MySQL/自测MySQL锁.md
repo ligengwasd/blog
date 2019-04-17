@@ -143,6 +143,24 @@ INNODB	140551101958432:3:5:4:140550992903864	3323	5179	19	lock-test	task_queue		
 INNODB	140551101958432:3:4:5:140550992904208	3323	5179	19	lock-test	task_queue			PRIMARY	140550992904208	RECORD	X,REC_NOT_GAP	GRANTED	40
 ```
 
+# 5.supremum pseudo-record
+
+执行
+
+```
+BEGIN;
+SELECT * FROM task_queue WHERE id = 100 FOR UPDATE;
+```
+
+查看data_locks
+
+```
+INNODB	140551101958432:1064:140550992906904	3357	5179	48	lock-test	task_queue				140550992906904	TABLE	IX	GRANTED	
+INNODB	140551101958432:3:4:1:140550992903864	3357	5179	48	lock-test	task_queue			PRIMARY	140550992903864	RECORD	X	GRANTED	supremum pseudo-record
+```
+
+
+
 # 总结
 
 | 索引     | 记录是否存在 | 加锁情况                                                     |
