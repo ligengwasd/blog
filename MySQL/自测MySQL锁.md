@@ -19,6 +19,8 @@ id     taskId
 
 # 2.主键
 
+## 2.1找不到那条记录
+
 执行
 
 ```sql
@@ -33,9 +35,27 @@ INNODB	140551101959344:1064:140550992913048	3249	5093	18	lock-test	task_queue			
 INNODB	140551101959344:3:4:5:140550992910104	3249	5093	18	lock-test	task_queue			PRIMARY	140550992910104	RECORD	X,GAP	GRANTED	40
 ```
 
+## 2.1找到那条记录
+
+执行
+
+```sql
+BEGIN;
+SELECT * FROM task_queue WHERE id = 40 FOR UPDATE;
+```
+
+查看data_locks
+
+```
+INNODB	140551101959344:1064:140550992913048	3273	5093	42	lock-test	task_queue				140550992913048	TABLE	IX	GRANTED	
+INNODB	140551101959344:3:4:5:140550992910104	3273	5093	42	lock-test	task_queue			PRIMARY	140550992910104	RECORD	X,REC_NOT_GAP	GRANTED	40
+```
+
+
+
 # 3.普通索引
 
-## 3.1找不到那行数据
+## 3.1找不到那条记录
 
 执行
 
@@ -51,11 +71,15 @@ INNODB	140551101959344:1064:140550992913048	3269	5093	23	lock-test	task_queue			
 INNODB	140551101959344:3:5:4:140550992910104	3269	5093	23	lock-test	task_queue			taskId	140550992910104	RECORD	X,GAP	GRANTED	41, 40
 ```
 
-## 3.2找到那行数据
+获取两把锁：
+
+X,GAP：next key锁
+
+## 3.2找到那条记录
 
 执行
 
-```
+```sql
 BEGIN;
 SELECT * FROM task_queue WHERE taskId = 41 FOR UPDATE;
 ```
@@ -79,4 +103,19 @@ X ：next key锁，锁住记录本身和记录之前的间隙。
 X,REC_NOT_GAP ：行锁
 
 X,GAP ： GAP锁
+
+
+
+# 总结
+
+| 索引     | 记录是否存在 | 加锁情况                                                     |
+| -------- | ------------ | ------------------------------------------------------------ |
+| 主键     | 否           | IX<br />X,GAP                                                |
+|          | 是           | IX<br />X,REC_NOT_GAP                                        |
+| 普通索引 | 否           | IX<br />X,GAP                                                |
+|          | 是           | IX<br />X：next key锁，锁住记录本身和记录之前的间隙。<br />X,REC_NOT_GAP ：行锁<br />X,GAP ： GAP锁 |
+| 唯一索引 | 否           | IX                                                           |
+|          | 是           | IX                                                           |
+
+
 
