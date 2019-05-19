@@ -1,3 +1,62 @@
+# execute方法
+
+```java
+/**
+ * Executes the given task sometime in the future.  The task
+ * may execute in a new thread or in an existing pooled thread.
+ *
+ * If the task cannot be submitted for execution, either because this
+ * executor has been shutdown or because its capacity has been reached,
+ * the task is handled by the current {@code RejectedExecutionHandler}.
+ *
+ * @param command the task to execute
+ * @throws RejectedExecutionException at discretion of
+ *         {@code RejectedExecutionHandler}, if the task
+ *         cannot be accepted for execution
+ * @throws NullPointerException if {@code command} is null
+ */
+public void execute(Runnable command) {
+    if (command == null)
+        throw new NullPointerException();
+    /*
+     * Proceed in 3 steps:
+     *
+     * 1. If fewer than corePoolSize threads are running, try to
+     * start a new thread with the given command as its first
+     * task.  The call to addWorker atomically checks runState and
+     * workerCount, and so prevents false alarms that would add
+     * threads when it shouldn't, by returning false.
+     *
+     * 2. If a task can be successfully queued, then we still need
+     * to double-check whether we should have added a thread
+     * (because existing ones died since last checking) or that
+     * the pool shut down since entry into this method. So we
+     * recheck state and if necessary roll back the enqueuing if
+     * stopped, or start a new thread if there are none.
+     *
+     * 3. If we cannot queue task, then we try to add a new
+     * thread.  If it fails, we know we are shut down or saturated
+     * and so reject the task.
+     */
+    int c = ctl.get();
+    if (workerCountOf(c) < corePoolSize) {
+        if (addWorker(command, true))
+            return;
+        c = ctl.get();
+    }
+    if (isRunning(c) && workQueue.offer(command)) {
+        int recheck = ctl.get();
+      	// 入队成功，重新检测状态。如果不是RUNNING状态，删除任务。
+        if (! isRunning(recheck) && remove(command))
+            reject(command);// 删除成功执行reject
+        else if (workerCountOf(recheck) == 0) // 任务入队成功，发现没有线程执行，创建worker。
+            addWorker(null, false);
+    }
+    else if (!addWorker(command, false))
+        reject(command);
+}
+```
+
 # addWorker方法
 
 ```java
@@ -25,7 +84,7 @@ private boolean addWorker(Runnable firstTask, boolean core) {
             if (compareAndIncrementWorkerCount(c))
                 break retry;
             c = ctl.get();  // Re-read ctl
-          	// 增加WorkerCount失败，但是重新检测状态的时候发现状态被更改。必须跳到外层循环。状态没变，继续里层循环。
+          	// 增加WorkerCount失败，但是重新检测状态的时候发现状态被更改，必须跳到外层循环。状态没变，继续里层循环。
             if (runStateOf(c) != rs)
                 continue retry;
             // else CAS failed due to workerCount change; retry inner loop
@@ -46,7 +105,9 @@ private boolean addWorker(Runnable firstTask, boolean core) {
                 // Back out on ThreadFactory failure or if
                 // shut down before lock acquired.
                 int rs = runStateOf(ctl.get());
-
+								
+              	// rs < SHUTDOWN ： 只能是RUNNING状态
+              	// rs == SHUTDOWN && firstTask == null  ：execute方法里面，执行入队操作之后发现workers时空的，传入的firstTask=null
                 if (rs < SHUTDOWN ||
                     (rs == SHUTDOWN && firstTask == null)) {
                     if (t.isAlive()) // precheck that t is startable
@@ -66,9 +127,36 @@ private boolean addWorker(Runnable firstTask, boolean core) {
             }
         }
     } finally {
+      	// 线程没有启动，回滚。
         if (! workerStarted)
             addWorkerFailed(w);
     }
     return workerStarted;
+}
+```
+
+
+
+# addWorkerFailed方法
+
+```java
+/**
+     * Rolls back the worker thread creation.
+     * - removes worker from workers, if present
+     * - decrements worker count
+     * - rechecks for termination, in case the existence of this
+     *   worker was holding up termination
+     */
+private void addWorkerFailed(Worker w) {
+    final ReentrantLock mainLock = this.mainLock;
+    mainLock.lock();
+    try {
+        if (w != null)
+            workers.remove(w);
+        decrementWorkerCount();
+        tryTerminate();
+    } finally {
+        mainLock.unlock();
+    }
 }
 ```
