@@ -21,9 +21,11 @@ private boolean addWorker(Runnable firstTask, boolean core) {
             if (wc >= CAPACITY ||
                 wc >= (core ? corePoolSize : maximumPoolSize))
                 return false;
+          	// 增加WorkerCount成功跳出循环。
             if (compareAndIncrementWorkerCount(c))
                 break retry;
             c = ctl.get();  // Re-read ctl
+          	// 增加WorkerCount失败，但是重新检测状态的时候发现状态被更改。必须跳到外层循环。状态没变，继续里层循环。
             if (runStateOf(c) != rs)
                 continue retry;
             // else CAS failed due to workerCount change; retry inner loop
